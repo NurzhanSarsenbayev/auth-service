@@ -10,13 +10,13 @@ from sqlalchemy.orm import relationship
 class LoginHistory(Base):
     __tablename__ = "login_history"
     __table_args__ = (
-        # не обязательно объявлять, индекс уже создан миграцией,
-        # но так ORM «знает» о нём; в БД ничего не меняет
+        # Not strictly required: the index is created by migration.
+        # Declaring it here makes SQLAlchemy aware of it; it does not modify the DB.
         Index("ix_login_history_user_id_time", "user_id", desc("login_time")),
         {"extend_existing": True},
     )
 
-    # составной PK как в БД
+    # composite PK
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, nullable=False)
     login_time = Column(DateTime, primary_key=True, default=datetime.utcnow, nullable=False)
 

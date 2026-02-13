@@ -17,9 +17,8 @@ def setup_logging():
     handler.setFormatter(logging.Formatter(log_format))
     handler.addFilter(RequestIdFilter())
 
-    app_logger = logging.getLogger("app")  # 👈 отдельный логгер
+    app_logger = logging.getLogger("app")  # dedicated application logger
     app_logger.setLevel(logging.INFO)
     app_logger.addHandler(handler)
-    app_logger.propagate = False  # 👈 чтобы не уходило в root/uvicorn
-
+    app_logger.propagate = False  # prevent duplicate logs via root/uvicorn
     return app_logger

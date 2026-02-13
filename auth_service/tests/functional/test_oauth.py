@@ -21,7 +21,6 @@ async def test_jwks_shape(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_jwks_verifies_our_token(client: AsyncClient, create_user):
-    # создаём пользователя и логинимся
     await create_user("jwksuser", "jwks@example.com", "secret123")
     login_resp = await client.post(
         "/api/v1/auth/login",
@@ -30,16 +29,13 @@ async def test_jwks_verifies_our_token(client: AsyncClient, create_user):
     assert login_resp.status_code == HTTPStatus.OK
     token = login_resp.json()["access_token"]
 
-    # тянем JWKS
     jwks_resp = await client.get("/.well-known/jwks.json")
     assert jwks_resp.status_code == HTTPStatus.OK
     jwks = jwks_resp.json()["keys"]
 
-    # подбираем ключ по kid
     kid = get_unverified_header(token)["kid"]
     key_dict = next(k for k in jwks if k["kid"] == kid)
 
-    # строим публичный ключ и валидируем подпись токена
     public_key = RSAAlgorithm.from_jwk(json.dumps(key_dict))
     claims = jwt_decode(
         token,
@@ -52,7 +48,6 @@ async def test_jwks_verifies_our_token(client: AsyncClient, create_user):
 
 @pytest.mark.asyncio
 async def test_oauth_login_redirect(client: AsyncClient):
-    # редирект на провайдера (у тебя статус явно 307)
     resp = await client.get("/api/v1/oauth/google/login",
                             follow_redirects=False)
     assert resp.status_code == HTTPStatus.TEMPORARY_REDIRECT

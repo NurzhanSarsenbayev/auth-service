@@ -31,7 +31,7 @@ class UserRepository(SQLAlchemyRepository[User]):
         return [row[0] for row in result.all()]
 
     async def get_by_social(self, provider: str, provider_account_id: str) -> User | None:
-        """Найти пользователя по соц.аккаунту"""
+        """Find a user by social account"""
         result = await self.session.execute(
             select(User)
             .join(SocialAccount)
@@ -45,7 +45,7 @@ class UserRepository(SQLAlchemyRepository[User]):
     async def link_social(
         self, user_id: UUID, provider: str, provider_account_id: str
     ) -> SocialAccount:
-        """Привязать соц.аккаунт к пользователю"""
+        """Link a social account to a user"""
         social = SocialAccount(
             user_id=user_id,
             provider=provider,

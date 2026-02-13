@@ -21,9 +21,7 @@ class UserRole(Base):
         UUID(as_uuid=True), ForeignKey("roles.role_id", ondelete="CASCADE"), nullable=False
     )
 
-    # когда назначили роль
     assigned_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
-    # связи
     user = relationship("User", back_populates="user_roles")
     role = relationship("Role", back_populates="user_roles")

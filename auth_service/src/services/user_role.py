@@ -10,11 +10,11 @@ from services.base import BaseService
 
 class UserRoleService(BaseService):
     async def get_user_roles(self, user_id: UUID) -> list[Role]:
-        """Возвращает список ролей пользователя (для RBAC и сервисов)."""
+        """Return a user's roles (for RBAC and internal services)."""
         return await self.repo.get_roles_for_user(user_id)
 
     async def assign_role_to_user(self, user_id: UUID, role_id: UUID) -> dict:
-        """Назначает роль пользователю."""
+        """Assign a role to a user."""
         ur = await self.repo.assign_role(user_id, role_id)
         if not ur:
             raise HTTPException(
@@ -29,7 +29,7 @@ class UserRoleService(BaseService):
         return {"detail": f"Role {role_id} assigned to user {user_id}"}
 
     async def remove_role_from_user(self, user_id: UUID, role_id: UUID) -> dict:
-        """Удаляет роль у пользователя."""
+        """Remove a role from a user."""
         result = await self.repo.remove_role_from_user(user_id, role_id)
         if result.rowcount == 0:
             raise HTTPException(
@@ -45,15 +45,15 @@ class UserRoleService(BaseService):
         return {"detail": f"Role {role_id} removed from user {user_id}"}
 
     async def check_role(self, user_id: UUID, role_name: str) -> dict:
-        """Проверяет наличие роли у пользователя."""
+        """Check whether a user has a role."""
         roles = await self.repo.get_roles_for_user(user_id)
         allowed = any(r.name == role_name for r in roles)
         return {"allowed": allowed}
 
     async def current_user_info(self, principal: CurrentUserResponse) -> CurrentUserResponse:
-        """Возвращает данные о текущем пользователе (или госте)."""
+        """Return the current user (or anonymous guest)."""
         return principal
 
     async def list_all_users(self) -> list[UserRoleListResponse]:
-        """Список всех пользователей с их ролями."""
+        """List all users with their roles."""
         return await self.repo.list_all()

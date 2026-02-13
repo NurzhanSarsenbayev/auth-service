@@ -16,7 +16,7 @@ depends_on = None
 
 
 def upgrade():
-    # 1) Создаём родителя (PK обязательно включает partition key!)
+    # 1) Create the parent table (PK must include the partition key!)
     op.execute(
         """
         CREATE TABLE IF NOT EXISTS login_history_new (
@@ -30,7 +30,7 @@ def upgrade():
         """
     )
 
-    # 2) Индексы (создаются как partitioned indexes)
+    # 2) Indexes (created as partitioned indexes)
     op.execute(
         """
         CREATE INDEX IF NOT EXISTS ix_login_history_user_id_time
@@ -38,7 +38,7 @@ def upgrade():
         """
     )
 
-    # 3) Дефолтный раздел (на всякий)
+    # 3) Default partition (safety net)
     op.execute(
         """
         CREATE TABLE IF NOT EXISTS login_history_default
@@ -46,7 +46,7 @@ def upgrade():
         """
     )
 
-    # 4) Месячные разделы (за 12 мес назад и 12 вперёд)
+    # 4) Monthly partitions (12 months back and 12 months ahead)
     op.execute(
         """
         DO $$
@@ -70,8 +70,8 @@ def upgrade():
         """
     )
 
-    # 5) Переливаем существующие данные (если есть исходная таблица)
-    #    Если миграция 0001 создала login_history — копируем.
+    # 5) Backfill existing data (if any source table exists).
+    #    If migration 0001 created login_history, copy from it.
     op.execute(
         """
         DO $$
@@ -90,7 +90,7 @@ def upgrade():
         """
     )
 
-    # 6) Переименовываем
+    # 6) Rename tables
     op.execute(
         """
         DO $$
@@ -106,7 +106,7 @@ def upgrade():
     )
     op.execute("ALTER TABLE login_history_new RENAME TO login_history;")
 
-    # 7) Чистим старое
+    # 7) Cleanup old objects
     op.execute(
         """
         DO $$
@@ -123,7 +123,7 @@ def upgrade():
 
 
 def downgrade():
-    # Обратное преобразование в «плоскую» таблицу
+    # Reverse migration back to a non-partitioned ("flat") table
     op.execute(
         """
         CREATE TABLE IF NOT EXISTS login_history_flat (

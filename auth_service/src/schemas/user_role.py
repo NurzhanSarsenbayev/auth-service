@@ -4,12 +4,12 @@ from pydantic import BaseModel, Field
 from schemas.role import RoleResponse
 
 
-# ----- список пользователей с ролями (только админ) -----
+# ----- list of users with roles (admin only) -----
 class UserRoleListResponse(BaseModel):
     user_id: UUID = Field(alias="id")
     username: str
     roles: list[RoleResponse] = []
 
     class Config:
-        from_attributes = True  # позволяет маппить ORM -> Pydantic
+        from_attributes = True  # allow ORM -> Pydantic mapping
         populate_by_name = True

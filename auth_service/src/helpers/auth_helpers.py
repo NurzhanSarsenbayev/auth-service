@@ -32,9 +32,9 @@ def set_refresh_cookie(response: Response, refresh_token: str) -> None:
         key="refresh_token",
         value=refresh_token,
         httponly=True,
-        secure=not settings.testing,
+        secure=settings.cookie_secure,
         samesite="strict",
-        max_age=30 * 24 * 60 * 60,  # 30 дней
+        max_age=30 * 24 * 60 * 60,  # 30 days
     )
 
 
@@ -88,5 +88,5 @@ async def validate_refresh(
 async def blacklist_token(redis: Redis, token: str) -> None:
     ttl = get_token_ttl(token)
     payload = await decode_token(token, redis)
-    jti = payload.get("jti") or token  # запасной ключ
+    jti = payload.get("jti") or token  # fallback key if JTI is missing
     await redis.setex(f"blacklist:{jti}", ttl, "1")

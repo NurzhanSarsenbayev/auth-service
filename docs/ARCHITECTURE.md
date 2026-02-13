@@ -2,7 +2,7 @@
 
 ## Overview
 This repository provides a standalone **Auth Service** for issuing and validating JWT tokens using **RS256** and a **JWKS**
-endpoint. The service persists data in **PostgreSQL** and may use **Redis** depending on configuration.
+endpoint. The service persists data in **PostgreSQL**. **Redis** required for standalone demo.
 
 ## Components
 - **Auth API (FastAPI)**: HTTP API for authentication flows, token issuance, and authorization checks.

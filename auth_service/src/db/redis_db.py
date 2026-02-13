@@ -23,6 +23,6 @@ async def close_redis(client: redis.Redis) -> None:
         await client.close()
 
 
-# 👇 зависимость для FastAPI
+# FastAPI dependency provider
 async def get_redis(request: Request) -> redis.Redis:
     return request.app.state.redis

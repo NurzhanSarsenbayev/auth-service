@@ -21,7 +21,7 @@ from utils.security import hash_password
 
 @pytest.fixture(scope="session")
 def event_loop():
-    """Единый event loop для всех тестов"""
+    """A shared event loop for all tests."""
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
     loop.close()
@@ -33,7 +33,7 @@ def event_loop():
 
 @pytest_asyncio.fixture(scope="session")
 async def engine():
-    """Создаём движок и схему БД для тестов"""
+    """Create a DB engine and schema for tests."""
     eng = make_engine(settings.database_url)
     async with eng.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -43,7 +43,7 @@ async def engine():
 
 @pytest_asyncio.fixture(scope="function")
 async def db_session(engine):
-    """Выдаёт сессию для каждого теста"""
+    """Provide a DB session per test."""
     session_factory = make_session_factory(engine)
     async with session_factory() as session:
         yield session

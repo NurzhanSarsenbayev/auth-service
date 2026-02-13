@@ -17,9 +17,8 @@ from .base import BaseService
 
 
 class AuthService(BaseService):
-    # --------- базовые операции ---------
     async def authenticate_user(self, username: str, password: str) -> AuthResult | None:
-        """Проверка логина/пароля и выдача токенов."""
+        """Validate credentials and issue tokens."""
         user = await self.repo.get_by_username(username)
         if not user or not verify_password(password, user.hashed_password):
             return None
@@ -32,19 +31,19 @@ class AuthService(BaseService):
         return {"user": user, "tokens": tokens}
 
     async def record_login(self, user_id: UUID | str, user_agent: str, ip_address: str):
-        """Фиксируем факт входа в историю логинов."""
+        """Record a login event in the login history."""
         login = LoginHistory(user_id=user_id, user_agent=user_agent, ip_address=ip_address)
         self.repo.session.add(login)
         await self.repo.session.commit()
 
     async def logout(self, user_id: UUID, refresh_token: str):
-        """Логаут одного токена."""
+        """Logout a single token."""
         if self.redis:
             await blacklist_token(self.redis, refresh_token)
             await self.redis.srem(f"user_refresh:{user_id}", refresh_token)
 
     async def logout_all(self, user_id: UUID):
-        """Логаут всех refresh-токенов пользователя."""
+        """Logout all refresh tokens for the user."""
         if not self.redis:
             return
         tokens = await self.redis.smembers(f"user_refresh:{user_id}")
@@ -53,7 +52,6 @@ class AuthService(BaseService):
             await blacklist_token(self.redis, token)
         await self.redis.delete(f"user_refresh:{user_id}")
 
-    # --------- сценарии высокого уровня ---------
     async def login_with_form(
         self, username: str, password: str, request: Request, response: Response
     ) -> TokenPair:

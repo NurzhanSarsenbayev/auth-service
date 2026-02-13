@@ -11,7 +11,7 @@ class OAuthProvider(ABC):
 
     @abstractmethod
     async def exchange_code_for_token(self, code: str) -> str:
-        """Возвращает access_token"""
+        """Return an OAuth access token."""
         ...
 
     @abstractmethod

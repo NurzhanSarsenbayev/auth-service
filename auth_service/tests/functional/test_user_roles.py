@@ -6,8 +6,6 @@ from http import HTTPStatus
 
 @pytest.mark.asyncio
 async def test_assign_and_check_role(client: AsyncClient):
-    """Назначение роли пользователю и проверка её наличия"""
-    # создаём юзера
     user_resp = await client.post(
         "/api/v1/users/signup",
         json={
@@ -18,7 +16,6 @@ async def test_assign_and_check_role(client: AsyncClient):
     )
     user_id = user_resp.json()["user_id"]
 
-    # логинимся админом
     login_resp = await client.post(
         "/api/v1/auth/login-json",
         json={
@@ -29,7 +26,6 @@ async def test_assign_and_check_role(client: AsyncClient):
     tokens = login_resp.json()
     headers = {"Authorization": f"Bearer {tokens['access_token']}"}
 
-    # создаём роль
     role_name = f"user_{uuid4().hex[:6]}"
     role_resp = await client.post(
         "/api/v1/roles/create",
@@ -38,7 +34,6 @@ async def test_assign_and_check_role(client: AsyncClient):
     )
     role_id = role_resp.json()["role_id"]
 
-    # назначаем роль
     assign_resp = await client.post(
         "/api/v1/user_roles/assign",
         json={"user_id": user_id, "role_id": role_id},
@@ -46,7 +41,6 @@ async def test_assign_and_check_role(client: AsyncClient):
     )
     assert assign_resp.status_code == HTTPStatus.CREATED
 
-    # проверяем роль
     check_resp = await client.post(
         "/api/v1/user_roles/check",
         json={"user_id": user_id, "role_name": role_name},
@@ -58,8 +52,6 @@ async def test_assign_and_check_role(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_remove_role_from_user(client: AsyncClient):
-    """Удаление роли у пользователя"""
-    # создаём юзера
     user_resp = await client.post(
         "/api/v1/users/signup",
         json={
@@ -70,7 +62,6 @@ async def test_remove_role_from_user(client: AsyncClient):
     )
     user_id = user_resp.json()["user_id"]
 
-    # логинимся админом
     login_resp = await client.post(
         "/api/v1/auth/login-json",
         json={
@@ -81,7 +72,6 @@ async def test_remove_role_from_user(client: AsyncClient):
     tokens = login_resp.json()
     headers = {"Authorization": f"Bearer {tokens['access_token']}"}
 
-    # создаём роль
     role_name = f"removerole_{uuid4().hex[:6]}"
     role_resp = await client.post(
         "/api/v1/roles/create",
@@ -93,14 +83,12 @@ async def test_remove_role_from_user(client: AsyncClient):
     )
     role_id = role_resp.json()["role_id"]
 
-    # назначаем роль
     await client.post(
         "/api/v1/user_roles/assign",
         json={"user_id": user_id, "role_id": role_id},
         headers=headers,
     )
 
-    # удаляем роль
     delete_resp = await client.delete(
         f"/api/v1/user_roles/{user_id}/roles/{role_id}", headers=headers
     )
@@ -109,8 +97,6 @@ async def test_remove_role_from_user(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_current_user(client: AsyncClient):
-    """Эндпоинт /me возвращает текущего пользователя"""
-    # логинимся админом
     login_resp = await client.post(
         "/api/v1/auth/login-json",
         json={
@@ -129,8 +115,6 @@ async def test_current_user(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_list_users(client: AsyncClient):
-    """Список пользователей с их ролями"""
-    # логинимся админом
     login_resp = await client.post(
         "/api/v1/auth/login-json",
         json={

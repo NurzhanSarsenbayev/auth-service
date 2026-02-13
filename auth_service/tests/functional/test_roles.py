@@ -5,8 +5,6 @@ from http import HTTPStatus
 
 @pytest.mark.asyncio
 async def test_create_role(client: AsyncClient):
-    """Создание роли админом"""
-    # логинимся суперюзером
     login_resp = await client.post(
         "/api/v1/auth/login-json",
         json={"username": "admin", "password": "123"},
@@ -14,7 +12,6 @@ async def test_create_role(client: AsyncClient):
     tokens = login_resp.json()
     headers = {"Authorization": f"Bearer {tokens['access_token']}"}
 
-    # создаём роль
     resp = await client.post(
         "/api/v1/roles/create",
         json={"name": "editor", "description": "Can edit content"},
@@ -28,7 +25,6 @@ async def test_create_role(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_list_roles(client: AsyncClient):
-    """Получение списка ролей"""
     login_resp = await client.post(
         "/api/v1/auth/login-json",
         json={"username": "admin", "password": "123"},
@@ -36,14 +32,12 @@ async def test_list_roles(client: AsyncClient):
     tokens = login_resp.json()
     headers = {"Authorization": f"Bearer {tokens['access_token']}"}
 
-    # создаём роль
     await client.post(
         "/api/v1/roles/create",
         json={"name": "viewer", "description": "Can view content"},
         headers=headers,
     )
 
-    # проверяем список
     resp = await client.get("/api/v1/roles/list", headers=headers)
     assert resp.status_code == HTTPStatus.OK
     roles = resp.json()
@@ -52,7 +46,6 @@ async def test_list_roles(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_update_role(client: AsyncClient):
-    """Обновление роли"""
     login_resp = await client.post(
         "/api/v1/auth/login-json",
         json={"username": "admin", "password": "123"},
@@ -60,7 +53,6 @@ async def test_update_role(client: AsyncClient):
     tokens = login_resp.json()
     headers = {"Authorization": f"Bearer {tokens['access_token']}"}
 
-    # создаём роль
     create_resp = await client.post(
         "/api/v1/roles/create",
         json={"name": "tester", "description": "Can test system"},
@@ -68,7 +60,6 @@ async def test_update_role(client: AsyncClient):
     )
     role_id = create_resp.json()["role_id"]
 
-    # обновляем роль
     update_resp = await client.put(
         f"/api/v1/roles/update/{role_id}",
         json={"description": "Can test and report bugs"},
@@ -81,7 +72,6 @@ async def test_update_role(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_delete_role(client: AsyncClient):
-    """Удаление роли"""
     login_resp = await client.post(
         "/api/v1/auth/login-json",
         json={"username": "admin", "password": "123"},
@@ -89,7 +79,6 @@ async def test_delete_role(client: AsyncClient):
     tokens = login_resp.json()
     headers = {"Authorization": f"Bearer {tokens['access_token']}"}
 
-    # создаём роль
     create_resp = await client.post(
         "/api/v1/roles/create",
         json={"name": "deleteme", "description": "To be deleted"},
@@ -97,12 +86,10 @@ async def test_delete_role(client: AsyncClient):
     )
     role_id = create_resp.json()["role_id"]
 
-    # удаляем
     delete_resp = await client.delete(
         f"/api/v1/roles/delete/{role_id}", headers=headers)
     assert delete_resp.status_code == HTTPStatus.NO_CONTENT
 
-    # проверяем что её больше нет
     list_resp = await client.get("/api/v1/roles/list", headers=headers)
     assert list_resp.status_code == HTTPStatus.OK
     roles = list_resp.json()
