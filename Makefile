@@ -55,7 +55,7 @@ logs-redis:
 
 health:
 	@for i in 1 2 3 4 5 6 7 8 9 10; do \
-		curl -fsS http://localhost:8000/docs >/dev/null && echo "OK: http://localhost:8000/docs" && exit 0; \
+		curl -s http://localhost:8000/api/v1/healthz && exit 0; \
 		sleep 1; \
 	done; \
 	echo "FAIL: API is not reachable"; exit 1

@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
 
-from api.v1 import auth, oauth, roles, user_roles, users, well_known
+from api.v1 import auth, health, oauth, roles, user_roles, users, well_known
 from core import telemetry
 from core.config import settings
 from core.logging import setup_logging
@@ -88,7 +88,7 @@ app.add_middleware(
     rules=rules,
     default_limit=settings.rate_limit_max_requests,
     default_window=settings.rate_limit_window_sec,
-    whitelist_paths=["/health", "/docs", "/openapi.json"],
+    whitelist_paths=["/healthz", "/docs", "/openapi.json"],
 )
 app.add_middleware(RequestIDMiddleware)
 
@@ -100,8 +100,4 @@ app.include_router(roles.router, prefix="/api/v1/roles", tags=["roles"])
 app.include_router(user_roles.router, prefix="/api/v1/user_roles", tags=["user_roles"])
 app.include_router(oauth.router, prefix="/api/v1/oauth", tags=["oauth"])
 app.include_router(well_known.router)
-
-
-@app.get("/")
-async def root():
-    return {"message": "Auth service is running!"}
+app.include_router(health.router, prefix="/api/v1")

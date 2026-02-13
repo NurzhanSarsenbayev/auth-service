@@ -7,16 +7,16 @@ from collections.abc import Iterable
 from core.config import settings
 from core.logging import request_id_ctx
 from fastapi import Request, Response
-from redis.asyncio import Redis
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.responses import JSONResponse
 
 
 def _client_ip(request: Request) -> str:
-    # доверяемся X-Forwarded-For, если есть, иначе берём socket
-    fwd = request.headers.get("x-forwarded-for")
-    if fwd:
-        return fwd.split(",")[0].strip()
+    # Trust X-Forwarded-For only when service is behind a trusted proxy
+    if settings.trust_proxy_headers:
+        forwarded = request.headers.get("x-forwarded-for")
+        if forwarded:
+            return forwarded.split(",")[0].strip()
     return request.client.host if request.client else "unknown"
 
 
@@ -46,7 +46,6 @@ class RateLimiterMiddleware(BaseHTTPMiddleware):
     def __init__(
         self,
         app,
-        redis: Redis | None = None,
         rules: Iterable[RateRule] | None = None,
         default_limit: int = None,
         default_window: int = None,
@@ -54,10 +53,6 @@ class RateLimiterMiddleware(BaseHTTPMiddleware):
     ):
         super().__init__(app)
         self.logger = logging.getLogger("app")
-
-        self.redis = redis or Redis(
-            host=settings.redis_host, port=settings.redis_port, decode_responses=True
-        )
 
         self.default_limit = default_limit or settings.rate_limit_max_requests
         self.default_window = default_window or settings.rate_limit_window_sec
@@ -95,9 +90,11 @@ class RateLimiterMiddleware(BaseHTTPMiddleware):
         now_ms = int(time.time() * 1000)
         win_ms = rule.window * 1000
 
+        redis = request.app.state.redis
+
         # Sliding window: удаляем старые, считаем, решаем.
         # Используем пайплайн для минимизации RTT.
-        pipe = self.redis.pipeline(transaction=False)
+        pipe = redis.pipeline(transaction=False)
         pipe.zremrangebyscore(key, 0, now_ms - win_ms)
         pipe.zcard(key)
         try:
@@ -110,7 +107,7 @@ class RateLimiterMiddleware(BaseHTTPMiddleware):
 
         if count >= rule.limit:
             # берём самый старый таймстемп, чтобы понять когда окно освободится
-            oldest = await self.redis.zrange(key, 0, 0, withscores=True)
+            oldest = await redis.zrange(key, 0, 0, withscores=True)
             if oldest:
                 oldest_ts_ms = int(oldest[0][1])
                 reset_epoch = (oldest_ts_ms + win_ms) // 1000
@@ -133,7 +130,7 @@ class RateLimiterMiddleware(BaseHTTPMiddleware):
 
         # ещё не достигли лимита — фиксируем текущий запрос
         member = f"{now_ms}-{uuid.uuid4().hex}"
-        pipe = self.redis.pipeline(transaction=False)
+        pipe = redis.pipeline(transaction=False)
         pipe.zadd(key, {member: now_ms})
         pipe.expire(key, rule.window)  # чтобы ключи не накапливались
         pipe.zcard(key)  # получим новое значение count
@@ -145,7 +142,7 @@ class RateLimiterMiddleware(BaseHTTPMiddleware):
 
         # добавим rate заголовки в ответ
         # reset = момент, когда самый ранний элемент выпадет из окна
-        oldest = await self.redis.zrange(key, 0, 0, withscores=True)
+        oldest = await redis.zrange(key, 0, 0, withscores=True)
         if oldest:
             oldest_ts_ms = int(oldest[0][1])
             reset_epoch = (oldest_ts_ms + win_ms) // 1000

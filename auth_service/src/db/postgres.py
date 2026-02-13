@@ -11,7 +11,12 @@ Base = declarative_base()
 
 def make_engine(db_url: str | None = None, echo: bool = False):
     dsn = db_url or settings.database_url
-    return create_async_engine(dsn, echo=echo, future=True)
+    return create_async_engine(
+        dsn,
+        echo=echo,
+        future=True,
+        connect_args={"timeout": settings.db_connect_timeout_sec},
+    )
 
 
 def make_session_factory(engine):

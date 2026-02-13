@@ -19,6 +19,10 @@ See: `auth_service/keys/README.md`
 - External clients are untrusted.
 - The Auth Service is the issuer of tokens and must protect signing key material.
 - Downstream services must treat access tokens as untrusted input and verify signature + claims.
+- Rate limiting uses client IP.
+- X-Forwarded-For is only trusted when TRUST_PROXY_HEADERS=true.
+- Default is false (safe for direct exposure).
+- In production behind reverse proxy enable it.
 
 ## Guarantees (local standalone)
 - No automatic migrations/seeding on container startup.

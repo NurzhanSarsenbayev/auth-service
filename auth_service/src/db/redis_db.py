@@ -11,6 +11,8 @@ async def init_redis() -> redis.Redis:
         f"redis://{host}:{port}/0",
         encoding="utf-8",
         decode_responses=True,
+        socket_connect_timeout=settings.redis_connect_timeout_sec,
+        socket_timeout=settings.redis_socket_timeout_sec,
     )
     await client.ping()
     return client

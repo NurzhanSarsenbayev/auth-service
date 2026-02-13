@@ -45,6 +45,15 @@ class Settings(BaseSettings):
     rate_limit_window_sec: int = 60
     rate_limit_max_requests: int = 100
 
+    # Trust proxy headers (X-Forwarded-For, etc.) ONLY behind a trusted reverse proxy.
+    # If service is exposed directly, keep this False to avoid spoofing.
+    trust_proxy_headers: bool = False
+
+    # Connection timeouts (app-level, not only entrypoint)
+    db_connect_timeout_sec: int = 10
+    redis_connect_timeout_sec: int = 5
+    redis_socket_timeout_sec: int = 5
+
     @property
     def database_url(self) -> str:
         return (
