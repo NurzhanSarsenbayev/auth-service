@@ -1,4 +1,5 @@
 # Auth Service
+![CI](https://github.com/NurzhanSarsenbayev/auth-service/actions/workflows/ci.yml/badge.svg?branch=main)
 
 A production-minded authentication service for issuing and validating JWT tokens (RS256) via JWKS, with refresh tokens,
 RBAC, and persistent storage.
