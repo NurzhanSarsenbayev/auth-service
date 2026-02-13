@@ -20,4 +20,3 @@ RUN chmod +x /app/entrypoint.auth.sh
 
 EXPOSE 8000
 ENTRYPOINT ["/app/entrypoint.auth.sh"]
-
