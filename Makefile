@@ -13,7 +13,7 @@ TEST_COMPOSE := docker compose -f $(TEST_COMPOSE_FILE)
 
 .PHONY: help init-env up down ps logs logs-auth health migrate seed-roles create-superuser bootstrap
 .PHONY: test test-up test-run test-cov test-logs test-down
-.PHONY: fmt fmt-check lint typecheck quality check demo demo_clean
+.PHONY: fmt fmt-check lint typecheck quality check demo demo-clean
 
 help:
 	@echo "Targets:"

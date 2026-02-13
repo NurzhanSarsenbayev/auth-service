@@ -1,12 +1,12 @@
 # Demo
 
-This demo verifies:
+## What this demo proves
 
-- RS256 JWT signing
-- JWKS public key exposure
-- Access / Refresh token flow
-- Role-Based Access Control (RBAC)
-- Explicit operational bootstrap (no runtime magic)
+- Tokens are signed with RS256 and can be verified via JWKS.
+- Refresh tokens are stored and can be revoked (logout / blacklist).
+- RBAC is enforced server-side (403 vs 201 behavior is demonstrated).
+- Startup is explicit: migrations/roles/superuser are not “magic”.
+- The system is reproducible via `make demo`.
 
 ---
 

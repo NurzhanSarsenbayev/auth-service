@@ -1,101 +1,255 @@
-# Auth Service
+# Auth Service (JWT + RBAC + OAuth)
 ![CI](https://github.com/NurzhanSarsenbayev/auth-service/actions/workflows/ci.yml/badge.svg?branch=main)
 
-A production-minded authentication service for issuing and validating JWT tokens (RS256) via JWKS, with refresh tokens,
-RBAC, and persistent storage.
+A production-minded authentication and authorization service built with FastAPI.
 
-This repository is focused on the **Auth Service standalone** path. Other components (if present) are considered
-**optional/demo-only**.
+**One-command demo:**
 
----
-
-## Key Features
-
-### Implemented
-- JWT (RS256) with JWKS endpoint (public key distribution)
-- Access / Refresh token flow
-- Role-based access control (RBAC)
-- PostgreSQL storage
-- Redis (caching / rate limiting depending on configuration)
-- Docker Compose standalone setup
-- Explicit ops commands (migrations, role seeding, superuser creation) via `make`
-- Strict quality gate: ruff, mypy (runtime strict subset), pre-commit
-- Runtime image: **Python 3.11 (Dockerfile)**
-- CI test matrix: **3.11 / 3.12** (tests container)
-
-### Optional (present but not required for standalone)
-- OAuth providers (if enabled/implemented in codebase)
-- Tracing / middleware integrations (if enabled)
-- Additional services from the original monorepo scope
-
-### Planned
-- Reproducible demo script + docs/DEMO.md
-- Security narrative: trust boundaries, guarantees, and limitations
-- Coverage threshold in CI (>=75%)
----
-
-## 60-second Quickstart (Standalone)
-
-### 1) Configure environment
-Copy sample env:
 ```bash
-cp auth_service/.env.auth.sample auth_service/.env.auth
+make demo
+```
+This project demonstrates:
+- **RS256 JWT** + **JWKS**
+- **Refresh** token revocation
+- **RBAC** enforcement
+- **OAuth** integration
+- **Redis**-backed rate limiting
+- **CI quality** gate with coverage
+- Designed as a **portfolio-grade** backend service.
+
+---
+
+## Implemented Features
+
+### Authentication
+- Access & Refresh tokens (RS256)
+- Secure HTTP-only refresh cookie
+- Token blacklist (Redis)
+- Logout (single token / all tokens)
+
+### Authorization
+- RBAC with role assignment
+- Protected endpoints with role enforcement
+
+### OAuth
+- Google OAuth
+- Yandex OAuth
+- Deterministic fallback username generation
+
+> OAuth providers require environment configuration.
+
+### Observability
+- Structured logging
+- OpenTelemetry tracing (optional via environment)
+- Health endpoint
+
+---
+
+## Architecture Overview
+
 ```
 
-### 2) Start services
+```
+            +--------------------+
+            |    Client / API    |
+            +----------+---------+
+                       |
+                       v
+            +--------------------+
+            |     FastAPI App    |
+            |--------------------|
+            | Routers            |
+            | Services           |
+            | Repositories       |
+            +----------+---------+
+                       |
+    +------------------+------------------+
+    |                                     |
+    v                                     v
+```
+
++-------------------+               +-------------------+
+|    PostgreSQL     |               |      Redis        |
+|-------------------|               |-------------------|
+| Users             |               | Rate limiting     |
+| Roles             |               | Token blacklist   |
+| Login history     |               +-------------------+
++-------------------+
+
+JWT signing keys are mounted via volume.
+Public keys are exposed via JWKS endpoint.
+
+````
+
+### Trust Boundaries
+
+- JWT private key is never committed.
+- Refresh tokens are revocable via Redis blacklist.
+- Proxy headers must only be trusted behind a secure reverse proxy.
+- See `docs/SECURITY.md` for threat model and limitations.
+
+---
+
+## Quickstart (Reproducible Demo)
+
+The recommended way to run the service:
+
+```bash
+make demo
+````
+
+This will:
+
+* Generate local JWT keys
+* Start PostgreSQL and Redis
+* Run migrations
+* Seed roles
+* Create a superuser (if configured)
+* Perform signup / login
+* Demonstrate RBAC enforcement
+* Demonstrate refresh flow
+* Output `DEMO SUCCESS`
+
+Clean up afterwards:
+
+```bash
+make demo-clean
+```
+
+Full demo explanation: `docs/DEMO.md`
+
+---
+
+## Manual Operations
+
+Initialize environment:
+
+```bash
+make init-env
+```
+
+Start services:
 
 ```bash
 make up
-make health
 ```
 
-### 3) Initialize database (explicit)
+Run migrations:
 
 ```bash
 make migrate
+```
+
+Seed roles:
+
+```bash
 make seed-roles
 ```
 
-### 4) Create a superuser (optional)
-
-Superuser is created **only if** `SUPERUSER_PASSWORD` is set in `auth_service/.env.auth`:
+Stop services:
 
 ```bash
-make create-superuser
-```
-
-### 5) Open API docs
-
-* [http://localhost:8000/docs](http://localhost:8000/docs)
-
----
-
-## Operations
-
-Common commands:
-
-```bash
-make ps
-make logs-auth
-make logs-postgres-auth
-make logs-redis
 make down
 ```
 
----
-
-## Documentation
-
-* `docs/ARCHITECTURE.md` - system overview and key flows
-* `docs/OPERATIONS.md` - operational guide (runbooks, troubleshooting)
-* `docs/SECURITY.md` - key handling, trust boundaries, security notes
+Operational notes: `docs/OPERATIONS.md`
 
 ---
 
-## Notes
+## Configuration Model
 
-This project aims to be **honest and reproducible**:
+Environment variables are loaded from `.env.auth`.
 
-* No automatic migrations/seeding on container startup
-* No secrets committed to the repository
-* One canonical standalone run path
+Important categories:
+
+* Database connection
+* Redis connection
+* JWT key paths
+* OAuth credentials
+* Cookie security flags
+* Rate limiting configuration
+* Tracing enablement
+
+JWT keys must be mounted via:
+
+```
+auth_service/keys/
+```
+
+If keys are missing, the application fails fast at startup.
+
+---
+
+## Security Model
+
+This repository includes a detailed security narrative:
+
+See:
+
+```
+docs/SECURITY.md
+```
+
+It covers:
+
+* Threat model
+* Token lifecycle
+* CSRF considerations
+* Rate limiting assumptions
+* What is intentionally not implemented
+
+---
+
+## Quality & CI
+
+CI includes:
+
+* Ruff (lint + format check)
+* MyPy (type checking subset)
+* Pre-commit hooks
+* Pytest with coverage
+* Coverage threshold enforcement
+
+Python versions tested:
+
+* 3.11
+* 3.12
+
+The CI is designed to reflect the actual project state.
+No undocumented behavior.
+
+---
+
+## Roadmap (Honest & Short)
+
+* JSON structured logging output option
+* Optional Redis-less mode
+* Stronger rate limit key normalization
+* Expanded integration tests for OAuth flows
+
+---
+
+## Project Structure
+
+```
+auth_service/
+    src/
+        core/
+        services/
+        repositories/
+        models/
+        middleware/
+        schemas/
+        utils/
+    alembic/
+    tests/
+docs/
+Makefile
+docker-compose.yml
+```
+
+---
+
+## License
+
+For demonstration and portfolio purposes.

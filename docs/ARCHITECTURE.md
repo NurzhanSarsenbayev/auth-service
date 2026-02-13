@@ -7,7 +7,7 @@ endpoint. The service persists data in **PostgreSQL**. **Redis** required for st
 ## Components
 - **Auth API (FastAPI)**: HTTP API for authentication flows, token issuance, and authorization checks.
 - **PostgreSQL**: persistent storage (users, roles, refresh tokens, and other auth-related state).
-- **Redis (optional)**: auxiliary storage for caching and/or rate limiting (configuration-dependent).
+- **Redis (required for standalone demo)**: used by the rate limiter and token blacklist (refresh revocation).
 
 ## High-level request flow
 1. Client calls an auth endpoint (e.g., login/refresh).

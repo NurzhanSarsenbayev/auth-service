@@ -1,5 +1,7 @@
 # Operations
 
+> For a reproducible end-to-end run, use `make demo` (see `docs/DEMO.md`).
+
 ## Standalone run
 ### 1) Configure environment
 ```bash
