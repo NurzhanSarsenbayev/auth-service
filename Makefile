@@ -24,6 +24,7 @@ help:
 	@echo "  make logs-auth - auth service logs"
 	@echo "  make health    - check API is up"
 	@echo "  make init-env  - create auth_service/.env.auth from sample"
+	@echo "  make create-superuser SUPERUSER_PASSWORD=StrongPass123!"
 	@echo "  make test      - run integration tests via docker compose"
 	@echo "  make quality   - run ruff fmt-check + lint + mypy"
 
@@ -66,7 +67,7 @@ seed-roles:
 	$(COMPOSE) exec auth_service python seed_roles.py
 
 create-superuser:
-	$(COMPOSE) exec auth_service python create_superuser.py
+	$(COMPOSE) exec -e SUPERUSER_PASSWORD="$(SUPERUSER_PASSWORD)" auth_service python create_superuser.py
 
 bootstrap: up migrate seed-roles health
 
@@ -108,6 +109,6 @@ quality: fmt-check lint typecheck
 check: quality
 
 demo:
-	@echo "Demo instructions: see docs/DEMO.md"
-	@echo "Swagger: http://localhost:8000/docs"
-	@echo "JWKS:    http://localhost:8000/.well-known/jwks.json"
+	@echo "Run the full demo: docs/DEMO.md"
+	@echo "Swagger UI: http://localhost:8000/docs"
+	@echo "JWKS:      http://localhost:8000/.well-known/jwks.json"

@@ -1,109 +1,218 @@
 # Demo
 
-This demo shows the core Auth Service flows:
-- JWT (RS256) + JWKS
-- Access / Refresh tokens
-- Role-based access control (RBAC)
+This demo verifies:
+
+- RS256 JWT signing
+- JWKS public key exposure
+- Access / Refresh token flow
+- Role-Based Access Control (RBAC)
+- Explicit operational bootstrap (no runtime magic)
+
+---
 
 ## Prerequisites
+
 - Docker + Docker Compose
 - Make
+- curl
+- OpenSSL
+- (optional) jq
 
-## 0) Configure environment
+---
+
+## 0) Environment setup
+
+Initialize environment:
 
 ```bash
-cp .env.example .env
+make init-env
+````
+
+Edit:
+
+```
+auth_service/.env.auth
 ```
 
-> Note: `.env` is used only for local development.
+Set a strong password:
 
-## 1) Start the stack
+```
+SUPERUSER_PASSWORD=StrongPass123!
+```
+
+Export it for demo commands (Git Bash):
+
+```bash
+export SUPERUSER_PASSWORD=StrongPass123!
+```
+
+---
+
+## 1) Generate JWT keys
+
+Run from repository root:
+
+```bash
+openssl genrsa -out auth_service/keys/jwtRS256.key 2048
+openssl rsa -in auth_service/keys/jwtRS256.key -pubout -out auth_service/keys/jwtRS256.key.pub
+```
+
+> Keys are local-only and ignored by git.
+
+---
+
+## 2) Start the stack
 
 ```bash
 make up
 make health
 ```
 
-Open Swagger UI:
+Swagger UI:
 
-* [http://localhost:8000/docs](http://localhost:8000/docs)
+```
+http://localhost:8000/docs
+```
 
-## 2) Bootstrap database (explicit, no magic)
+---
+
+## 3) Explicit bootstrap
 
 ```bash
 make migrate
 make seed-roles
+make create-superuser SUPERUSER_PASSWORD=$SUPERUSER_PASSWORD
 ```
 
-(Optional) Create an admin/superuser (requires `SUPERUSER_PASSWORD`):
+This creates:
 
-```bash
-make create-superuser
-```
+* admin user
+* role: admin
+* password: value of SUPERUSER_PASSWORD
 
-## 3) JWKS: verify public keys are exposed
+---
+
+## 4) JWKS verification
 
 ```bash
 curl -s http://localhost:8000/.well-known/jwks.json | head
 ```
 
-Expected: JSON with `keys: [...]`.
+Expected: JSON containing RSA public key metadata.
 
-## 4) Auth: login and get tokens
+---
 
-### 4.1 Register a user (if supported)
+## 5) Prepare demo workspace
+
+Create isolated folder for demo artifacts:
 
 ```bash
-curl -s -X POST http://localhost:8000/api/v1/auth/register \
+mkdir -p .demo
+```
+
+All temporary files will be stored in `.demo/`.
+
+---
+
+## 6) Create regular user
+
+```bash
+curl -s -X POST http://localhost:8000/api/v1/users/signup \
   -H "Content-Type: application/json" \
-  -d '{"email":"demo@example.com","password":"DemoPass123!"}'
+  -d '{"username":"demo","email":"demo@example.com","password":"DemoPass123!"}'
 ```
 
-### 4.2 Login (access + refresh)
+---
+
+## 7) Login as regular user
 
 ```bash
-TOKENS=$(curl -s -X POST http://localhost:8000/api/v1/auth/login \
+curl -s -X POST http://localhost:8000/api/v1/auth/login \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=demo&password=DemoPass123!" \
+  -c .demo/cookies_demo.txt > .demo/tokens_demo.json
+```
+
+Extract access token (optional, requires jq):
+
+```bash
+ACCESS_DEMO=$(cat .demo/tokens_demo.json | jq -r '.access_token')
+```
+
+---
+
+## 8) RBAC test (should fail for regular user)
+
+```bash
+curl -i -X POST http://localhost:8000/api/v1/roles/create \
   -H "Content-Type: application/json" \
-  -d '{"email":"demo@example.com","password":"DemoPass123!"}')
-
-echo "$TOKENS"
+  -H "Authorization: Bearer $ACCESS_DEMO" \
+  -d '{"name":"test_role","description":"demo role"}'
 ```
 
-Extract tokens (jq required, optional):
+Expected: `403 Forbidden`
+
+---
+
+## 9) Login as admin
 
 ```bash
-ACCESS=$(echo "$TOKENS" | jq -r '.access_token')
-REFRESH=$(echo "$TOKENS" | jq -r '.refresh_token')
+curl -s -X POST http://localhost:8000/api/v1/auth/login \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=admin&password=$SUPERUSER_PASSWORD" \
+  -c .demo/cookies_admin.txt > .demo/tokens_admin.json
 ```
 
-If you don’t have jq, just copy tokens from the response manually.
+Extract admin access token:
 
-## 5) Refresh flow
+```bash
+ACCESS_ADMIN=$(cat .demo/tokens_admin.json | jq -r '.access_token')
+```
+
+---
+
+## 10) RBAC test (admin should succeed)
+
+```bash
+curl -i -X POST http://localhost:8000/api/v1/roles/create \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $ACCESS_ADMIN" \
+  -d '{"name":"editor","description":"demo role"}'
+```
+
+Expected: `201 Created`
+
+---
+
+## 11) Refresh flow (cookie-based)
 
 ```bash
 curl -s -X POST http://localhost:8000/api/v1/auth/refresh \
-  -H "Content-Type: application/json" \
-  -d "{\"refresh_token\":\"$REFRESH\"}"
+  -b .demo/cookies_admin.txt
 ```
 
-Expected: new `access_token`.
+Expected: new access token.
 
-## 6) RBAC: verify role-protected endpoint
+---
 
-Call a protected endpoint (replace the URL with a real RBAC-protected endpoint):
+## 12) Cleanup
 
-```bash
-curl -i http://localhost:8000/api/v1/admin/ping \
-  -H "Authorization: Bearer $ACCESS"
-```
-
-Expected:
-
-* `403` for a normal user
-* `200` after granting the required role (or using a superuser token)
-
-## 7) Shutdown
+Stop containers:
 
 ```bash
 make down
 ```
+
+Remove demo artifacts:
+
+```bash
+rm -rf .demo
+```
+
+---
+
+## Notes
+
+* Demo artifacts are stored in `.demo/` and ignored by git.
+* No automatic migrations or seed operations happen on container startup.
+* JWT keys are mounted into the container via Docker volume.

@@ -10,6 +10,8 @@ services:
       - redis
     env_file:
       - auth_service/.env.auth
+    volumes:
+      - ./auth_service/keys:/app/keys:ro
 
   postgres_auth:
     image: postgres:16

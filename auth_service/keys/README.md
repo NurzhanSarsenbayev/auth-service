@@ -6,7 +6,8 @@ Expected files:
 - jwtRS256.key
 - jwtRS256.key.pub
 
-Generate:
+Generate (run from repo root):
 ```bash
-openssl genrsa -out jwtRS256.key 2048
-openssl rsa -in jwtRS256.key -pubout -out jwtRS256.key.pub
+openssl genrsa -out auth_service/keys/jwtRS256.key 2048
+openssl rsa -in auth_service/keys/jwtRS256.key -pubout -out auth_service/keys/jwtRS256.key.pub
+```

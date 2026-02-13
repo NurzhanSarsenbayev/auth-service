@@ -94,4 +94,5 @@ admin_panel/staticfiles/
 auth_service/keys/*
 !auth_service/keys/README.md
 
-cyrr_report.txt
+# Demo artifacts
+.demo/

@@ -1,9 +1,7 @@
 from http import HTTPStatus
 
-from core.config import settings
 from fastapi import APIRouter, Cookie, Depends, Request, Response
 from fastapi.security import OAuth2PasswordRequestForm
-from jwcrypto import jwk
 from schemas.auth import LoginRequest, TokenPair
 from services.auth import AuthService
 from utils.dependencies import get_auth_service
@@ -47,9 +45,3 @@ async def logout(
 ):
     refresh_token = request.cookies.get("refresh_token")
     return await auth_service.logout_by_cookie(refresh_token, response)
-
-
-@router.get("/.well-known/jwks.json")
-async def jwks():
-    key = jwk.JWK.from_pem(settings.jwt_public_key.encode())
-    return {"keys": [key.export(private_key=False, as_dict=True)]}
