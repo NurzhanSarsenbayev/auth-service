@@ -13,7 +13,7 @@ TEST_COMPOSE := docker compose -f $(TEST_COMPOSE_FILE)
 
 .PHONY: help init-env up down ps logs logs-auth health migrate seed-roles create-superuser bootstrap
 .PHONY: test test-up test-run test-cov test-logs test-down
-.PHONY: fmt fmt-check lint typecheck quality check
+.PHONY: fmt fmt-check lint typecheck quality check demo demo_clean
 
 help:
 	@echo "Targets:"
@@ -28,6 +28,8 @@ help:
 	@echo "  make test      - run integration tests via docker compose"
 	@echo "  make test-cov  - run integration tests with coverage (docker compose)"
 	@echo "  make quality   - run ruff fmt-check + lint + mypy"
+	@echo "  make demo      - run the full demo in ~2 minutes"
+	@echo "  make demo-clean - stop stack and remove .demo artifacts"
 
 init-env:
 	@test -f $(ENV_FILE) || cp auth_service/.env.auth.sample $(ENV_FILE)
@@ -124,6 +126,7 @@ quality: fmt-check lint typecheck
 check: quality
 
 demo:
-	@echo "Run the full demo: docs/DEMO.md"
-	@echo "Swagger UI: http://localhost:8000/docs"
-	@echo "JWKS:      http://localhost:8000/.well-known/jwks.json"
+	bash scripts/demo.sh
+
+demo-clean:
+	bash scripts/demo_clean.sh

@@ -19,6 +19,22 @@ This demo verifies:
 - (optional) jq
 
 ---
+## Quickstart (automated)
+
+Run the full demo:
+
+```bash
+export SUPERUSER_PASSWORD=StrongPass123!
+make demo
+```
+Cleanup:
+
+```bash
+make demo-clean
+```
+Everything below is the manual, step-by-step version.
+
+---
 
 ## 0) Environment setup
 
