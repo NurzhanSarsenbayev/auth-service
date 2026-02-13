@@ -106,3 +106,8 @@ typecheck:
 
 quality: fmt-check lint typecheck
 check: quality
+
+demo:
+	@echo "Demo instructions: see docs/DEMO.md"
+	@echo "Swagger: http://localhost:8000/docs"
+	@echo "JWKS:    http://localhost:8000/.well-known/jwks.json"
