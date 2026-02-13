@@ -4,6 +4,7 @@ from api.v1 import auth, oauth, roles, user_roles, users, well_known
 from core import telemetry
 from core.config import settings
 from core.logging import setup_logging
+from core.startup_checks import validate_runtime_environment
 from db.postgres import make_engine, make_session_factory
 from db.redis_db import close_redis, init_redis
 from fastapi import FastAPI
@@ -16,6 +17,8 @@ from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    validate_runtime_environment()
+
     # --- DB ---
     engine = make_engine()
     session_factory = make_session_factory(engine)
@@ -28,6 +31,9 @@ async def lifespan(app: FastAPI):
     app.state.redis = redis
 
     SQLAlchemyInstrumentor().instrument(engine=engine.sync_engine)
+
+    # if settings.database_url.endswith(":app@postgres_auth:5432/auth"):
+    #     logger.warning("Running with default development DB credentials.")
 
     yield
 
@@ -48,7 +54,7 @@ def custom_openapi():
         description="API docs",
         routes=app.routes,
     )
-    # добавляем ручную схему BearerAuth
+    # Add BearerAuth security scheme manually
     openapi_schema["components"]["securitySchemes"]["BearerAuth"] = {
         "type": "http",
         "scheme": "bearer",
@@ -65,11 +71,11 @@ if settings.enable_tracer:
     telemetry.instrument_app(app)
 add_pagination(app)
 rules = [
-    # Регистрация — жёстче
+    # Signup: stricter
     RateRule(r"^/api/v1/users/signup$", limit=5, window=60),
-    # Логин — умеренно
-    RateRule(r"^/api/v1/users/login$", limit=10, window=60),
-    # Все остальные — дефолт (можно не указывать, просто для примера)
+    # Login: moderate
+    RateRule(r"^/api/v1/auth/login$", limit=10, window=60),
+    # Everything else: default
     RateRule(
         r"^/api/v1/.*",
         limit=settings.rate_limit_max_requests,

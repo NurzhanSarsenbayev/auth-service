@@ -96,3 +96,5 @@ auth_service/keys/*
 
 # Demo artifacts
 .demo/
+
+cyrrilic.txt
