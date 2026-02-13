@@ -2,12 +2,12 @@
 
 from alembic import op
 
-# ревизии
+# Revisions
 revision = "0003_sync_login_history_index"
 down_revision = "0002_partition_login_history"
 
 def upgrade():
-    # безопасно: если индекс уже есть — ничего не произойдёт
+    # Safe: if the index already exists, this is a no-op
     op.execute("""
         DO $$
         BEGIN

@@ -16,8 +16,8 @@ class TokenPair(BaseModel):
 
 
 class RegisterRequest(BaseModel):
-    username: str  # логин (по правилам OAuth2)
-    email: EmailStr  # можно оставить, если хочешь иметь email
+    username: str  # OAuth2 username
+    email: EmailStr  # optional, if you want to store email
     password: str
 
 

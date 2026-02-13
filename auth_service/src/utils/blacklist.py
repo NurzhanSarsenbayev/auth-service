@@ -7,7 +7,7 @@ class TokenBlacklist:
         self.redis = redis_client
 
     async def add(self, token: str):
-        """Заблокировать refresh-токен до истечения"""
+        """Blacklist a refresh token until it expires."""
         payload = decode_token(token)
         jti = payload.get("jti")
         if not jti:
@@ -17,7 +17,7 @@ class TokenBlacklist:
             await self.redis.setex(f"blacklist:{jti}", ttl, "1")
 
     async def exists(self, token: str) -> bool:
-        """Проверить, заблокирован ли токен"""
+        """Check whether a token is blacklisted."""
         payload = decode_token(token)
         jti = payload.get("jti")
         if not jti:

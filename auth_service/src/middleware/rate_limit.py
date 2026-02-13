@@ -26,7 +26,7 @@ class RateRule:
     def __init__(self, pattern: str, limit: int, window: int):
         self.pattern = re.compile(pattern)
         self.limit = limit
-        self.window = window  # сек
+        self.window = window
 
 
 class RateLimiterMiddleware(BaseHTTPMiddleware):

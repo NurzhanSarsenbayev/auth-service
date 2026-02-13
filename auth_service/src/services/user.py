@@ -24,7 +24,6 @@ class UserService(BaseService):
         return await self.repo.get_by_username(username)
 
     async def create_user(self, username: str, email: str, password: str) -> User:
-        # проверка уникальности
         if await self.repo.get_by_email(email):
             raise HTTPException(
                 HTTPStatus.BAD_REQUEST,
@@ -41,7 +40,6 @@ class UserService(BaseService):
         self.repo.session.add(user)
         await self.repo.session.flush()
 
-        # назначаем роль user
         result = await self.repo.session.execute(select(Role).where(Role.name == "user"))
         default_role = result.scalar_one_or_none()
         if default_role:
@@ -52,7 +50,7 @@ class UserService(BaseService):
         return user
 
     async def get_login_history(self, user_id: str, params: Params) -> Page[LoginHistory]:
-        """История логинов с пагинацией (возвращаем ORM)."""
+        """Login history with pagination (returns ORM objects)."""
         stmt = (
             select(LoginHistory)
             .where(LoginHistory.user_id == user_id)
@@ -65,7 +63,6 @@ class UserService(BaseService):
     ) -> UserUpdateResponse:
         updated = False
 
-        # смена username
         if update.username:
             stmt = select(User).where(
                 User.username == update.username,
@@ -80,7 +77,6 @@ class UserService(BaseService):
             current_user.username = update.username
             updated = True
 
-        # смена пароля
         if update.old_password and update.new_password:
             if verify_password(update.old_password, current_user.hashed_password):
                 current_user.hashed_password = hash_password(update.new_password)

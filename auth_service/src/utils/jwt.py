@@ -81,7 +81,7 @@ async def decode_token(token: str, redis: Redis | None = None) -> dict[str, Any]
 
 # ---------- TTL ----------
 def get_token_ttl(token: str) -> int:
-    """Вернуть TTL токена в секундах (для Redis)"""
+    """Return token TTL in seconds (for Redis)."""
     payload = jwt.decode(
         token,
         settings.jwt_public_key,

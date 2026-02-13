@@ -15,8 +15,10 @@ class SocialAccount(Base):
         UUID(as_uuid=True), ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False
     )
 
-    provider = Column(String(50), nullable=False)  # "yandex", "google", "vk"
-    provider_account_id = Column(String(255), nullable=False)  # уникальный id у провайдера
+    provider = Column(String(50), nullable=False)  # "yandex", "google"
+    provider_account_id = Column(
+        String(255), nullable=False
+    )  # uniqueness of (provider, provider_account_id)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
@@ -24,5 +26,4 @@ class SocialAccount(Base):
         UniqueConstraint("provider", "provider_account_id", name="uq_provider_account"),
     )
 
-    # ORM-связь: user.social_accounts
     user = relationship("User", back_populates="social_accounts")

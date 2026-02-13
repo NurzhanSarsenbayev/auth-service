@@ -62,8 +62,8 @@ class GoogleOAuthProvider(OAuthProvider):
         data = resp.json()
         return OAuthUserInfo(
             provider=self.name,
-            provider_account_id=data["sub"],  # уникальный ID Google
+            provider_account_id=data["sub"],  # Google unique subject identifier
             email=data.get("email"),
-            login=data.get("email"),  # у Google логин ≈ email
+            login=data.get("email"),  # Google login is typically the email
             name=data.get("name"),
         )

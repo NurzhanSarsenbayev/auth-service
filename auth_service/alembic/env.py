@@ -20,14 +20,14 @@ settings = Settings()
 config = context.config
 fileConfig(config.config_file_name)
 
-# url берём либо из alembic.ini, либо из env
+# Read DB URL from alembic.ini or environment.
 url = (
     config.get_main_option("sqlalchemy.url")
     or os.getenv("DB_URL")
     or settings.database_url
 )
 
-# ✅ если async URL → заменяем на sync
+# If URL is async (asyncpg), convert it to sync for Alembic.
 url = url.replace("+asyncpg", "")
 
 target_metadata = Base.metadata

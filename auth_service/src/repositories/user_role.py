@@ -13,20 +13,20 @@ class UserRoleRepository:
         self.session = session
 
     async def add_role_to_user(self, user_id: UUID, role_id: UUID) -> UserRole:
-        """Просто добавляет связь (без commit), возвращает объект."""
+        """Add the relationship (no commit) and return the created object."""
         user_role = UserRole(user_id=user_id, role_id=role_id)
         self.session.add(user_role)
-        await self.session.flush()  # получаем PK
+        await self.session.flush()
         return user_role
 
     async def assign_role(self, user_id: UUID, role_id: UUID) -> UserRole:
-        """Назначает роль пользователю, если её ещё нет (commit внутри)."""
+        """Assign a role if missing (commits inside)."""
         stmt = select(UserRole).where(UserRole.user_id == user_id, UserRole.role_id == role_id)
         res = await self.session.execute(stmt)
         existing = res.scalar_one_or_none()
 
         if existing:
-            return existing  # уже есть
+            return existing
 
         user_role = UserRole(user_id=user_id, role_id=role_id)
         self.session.add(user_role)
@@ -37,7 +37,7 @@ class UserRoleRepository:
     async def remove_role_from_user(self, user_id: UUID, role_id: UUID):
         query = delete(UserRole).where(UserRole.user_id == user_id, UserRole.role_id == role_id)
         result = await self.session.execute(query)
-        return result  # вернём result, чтобы .rowcount можно было проверить
+        return result
 
     async def get_roles_for_user(self, user_id: UUID) -> list[Role]:
         stmt = (
@@ -54,7 +54,7 @@ class UserRoleRepository:
         return res.scalar_one_or_none()
 
     async def list_all(self) -> list[UserRoleListResponse]:
-        """Возвращает всех пользователей и их роли (ORM → Pydantic)."""
+        """Return all users and their roles (ORM -> Pydantic)."""
         query = select(User).options(selectinload(User.user_roles).selectinload(UserRole.role))
         result = await self.session.execute(query)
         users = result.scalars().all()

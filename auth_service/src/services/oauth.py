@@ -30,7 +30,7 @@ class OAuthService:
         provider: str,
         code: str,
         db: AsyncSession,
-        user_service: UserService,  # ⬅️ приняли сервис
+        user_service: UserService,
     ) -> OAuthCallbackResponse:
         prov = self.get_provider(provider)
 
@@ -44,15 +44,13 @@ class OAuthService:
         if social:
             user = await users.get_by_id(social.user_id)
         else:
-            # если email нет — даём детерминированный fallback
             username = info.login or f"user_{info.provider_account_id}"
             email = info.email or f"{username}@no-email.local"
 
-            # ✅ создаём через UserService → роль `user` навесится автоматически
             user = await user_service.create_user(
                 username=username,
                 email=email,
-                password=uuid.uuid4().hex,  # пароль не используется при OAuth
+                password=uuid.uuid4().hex,
             )
 
             await socials.link(
@@ -64,7 +62,7 @@ class OAuthService:
         await db.commit()
 
         payload = {"sub": str(user.user_id), "email": user.email}
-        return OAuthCallbackResponse(  # ✅ красиво и типизировано
+        return OAuthCallbackResponse(
             user_id=str(user.user_id),
             email=user.email,
             access_token=create_access_token(payload),

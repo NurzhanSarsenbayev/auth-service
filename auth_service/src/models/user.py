@@ -25,7 +25,6 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
-    # связи
     user_roles = relationship(
         "UserRole",
         back_populates="user",

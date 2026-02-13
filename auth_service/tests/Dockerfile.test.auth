@@ -14,17 +14,17 @@ RUN apt-get update && apt-get install -y \
 ENV PIP_CACHE_DIR=/root/.cache/pip
 ENV PIP_PROGRESS_BAR=off
 
-# ---- сначала продовые зависимости (кэшируются) ----
+# ---- production deps first (cache-friendly) ----
 COPY requirements.auth.txt .
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --no-cache-dir -r requirements.auth.txt
 
-# ---- потом тестовые (очень быстрые) ----
+# ---- then test deps (fast) ----
 COPY tests/requirements.test.auth.txt tests/requirements.test.auth.txt
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --no-cache-dir -r tests/requirements.test.auth.txt
 
-# ---- копируем весь код ----
+# ---- copy application source ----
 COPY . .
 
 WORKDIR /app
