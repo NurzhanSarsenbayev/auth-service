@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main, master]
+  push:
+    branches: [main, master]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Quality (ruff + mypy)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff mypy types-passlib
+          pip install -r auth_service/requirements.auth.txt
+          pip install -r auth_service/tests/requirements.test.auth.txt
+
+      - name: Ruff format (check)
+        run: ruff format --check .
+
+      - name: Ruff lint
+        run: ruff check auth_service/src auth_service/*.py
+
+      - name: Mypy (focused subset)
+        run: |
+          MYPYPATH=auth_service/src mypy \
+            auth_service/src/core \
+            auth_service/src/db \
+            auth_service/src/utils/jwt.py \
+            auth_service/src/utils/security.py
+
+  integration:
+    name: Integration tests (docker compose) py=${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare test env
+        run: |
+          cp auth_service/tests/.env.test.auth.example auth_service/tests/.env.test.auth
+
+      - name: Compose up (infra)
+        env:
+          PYTHON_VERSION: ${{ matrix.python-version }}
+        run: |
+          make test-up
+
+      - name: Run tests
+        env:
+          PYTHON_VERSION: ${{ matrix.python-version }}
+        run: |
+          make test-run
+
+      - name: Compose down
+        if: always()
+        run: |
+          make test-down

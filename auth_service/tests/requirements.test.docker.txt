@@ -1,0 +1,6 @@
+-r requirements.auth.txt
+
+pytest
+pytest-asyncio
+httpx
+aiosqlite

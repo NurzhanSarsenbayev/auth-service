@@ -1,0 +1,97 @@
+### --- Python ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pdb
+*.egg-info/
+*.egg
+*.so
+*.pyc
+
+### --- Virtual environments ---
+.venv/
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+### --- Env files ---
+.env
+.env.*
+!.env.auth.example
+!.env.auth.sample
+!.env.content.example
+!.env.admin.example
+!.env.test.auth.example
+!.env.test.content.example
+!.env.test.admin.example
+
+### --- IDEs / Editors ---
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+### --- Logs ---
+*.log
+
+### --- OS junk ---
+.DS_Store
+Thumbs.db
+
+### --- Docker ---
+docker-compose.override.yml
+*.pid
+*.sock
+
+### --- Tests / Coverage ---
+.pytest_cache/
+.coverage
+.coverage.*
+nosetests.xml
+coverage.xml
+*.cover
+htmlcov/
+
+### --- MyPy / Type check ---
+.mypy_cache/
+.dmypy.json
+.pyre/
+.pytype/
+
+### --- Redis dumps ---
+dump.rdb
+*.rdb
+*.aof
+
+### --- Alembic cache ---
+alembic/versions/__pycache__/
+
+### --- Misc ---
+*.bak
+*.tmp
+
+### --- Project-specific ---
+/data
+/etl
+taskfull
+
+# --- Django ---
+*.sqlite3
+media/
+staticfiles/
+admin_panel/staticfiles/
+
+# secrets / keys
+*.key
+*.pem
+*.p12
+*.pfx
+
+# keep keys folder structure in repo, but never commit keys
+auth_service/keys/*
+!auth_service/keys/README.md
+
+cyrr_report.txt

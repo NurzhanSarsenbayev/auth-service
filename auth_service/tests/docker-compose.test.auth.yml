@@ -1,0 +1,52 @@
+services:
+  test_postgres:
+    image: postgres:16
+    container_name: auth_postgres_test
+    env_file:
+      - .env.test.auth
+    volumes:
+      - test_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
+      interval: 5s
+      retries: 10
+
+  test_redis:
+    image: redis:7
+    container_name: auth_redis_test
+    env_file:
+      - .env.test.auth
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+    volumes:
+      - test_redis_data:/data
+
+  tests:
+    build:
+      context: ..
+      dockerfile: tests/Dockerfile.test.auth
+      args:
+        PYTHON_VERSION: ${PYTHON_VERSION:-3.11}
+    depends_on:
+      test_redis:
+        condition: service_healthy
+      test_postgres:
+        condition: service_healthy
+    env_file:
+      - .env.test.auth
+    environment:
+      OTEL_SERVICE_NAME: "auth-tests"
+      OTEL_TRACES_EXPORTER: "otlp"
+      OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4318"
+    entrypoint: ["/usr/bin/env", "bash", "/app/tests/entrypoint.test.auth.sh"]
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.57
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+
+volumes:
+  test_pg_data:
+  test_redis_data:
