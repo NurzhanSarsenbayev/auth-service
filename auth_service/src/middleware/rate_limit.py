@@ -31,16 +31,25 @@ class RateRule:
 
 class RateLimiterMiddleware(BaseHTTPMiddleware):
     """
-    Sliding window на Redis: на ключе ZSET храним таймстемпы запросов в окне.
-    Алгоритм (на каждый запрос):
-      1) ZREMRANGEBYSCORE(key, 0, now-window)
-      2) ZCARD(key) -> count
-      3) Если count >= limit -> 429
-         (берём самый старый ts, считаем reset и Retry-After)
-      4) Иначе ZADD(now, member), EXPIRE(key, window)
-    Заголовки: X-RateLimit-Limit, X-RateLimit-Remaining,
-     X-RateLimit-Reset(+ Retry-After при 429).
-    Идентификатор: user_id, если он известен в request.state.user_id; иначе IP.
+    Sliding-window rate limiting backed by Redis ZSET.
+
+    Key: `rate:{subject}:{path}` where subject is either user_id (if authenticated) or client IP.
+
+    Algorithm per request:
+    1) ZADD(now) to store the current timestamp.
+    2) ZREMRANGEBYSCORE(0..window_start) to drop old entries.
+    3) ZCARD to count requests in the current window.
+    4) EXPIRE to avoid unbounded key growth.
+
+    If count exceeds the limit, return 429 and include:
+    - X-RateLimit-Limit
+    - X-RateLimit-Remaining
+    - X-RateLimit-Reset
+    - Retry-After
+
+    Client IP:
+    - Uses X-Forwarded-For only when `TRUST_PROXY_HEADERS=true` (trusted reverse proxy).
+    - Otherwise uses request.client.host to prevent spoofing.
     """
 
     def __init__(
@@ -57,7 +66,7 @@ class RateLimiterMiddleware(BaseHTTPMiddleware):
         self.default_limit = default_limit or settings.rate_limit_max_requests
         self.default_window = default_window or settings.rate_limit_window_sec
 
-        # правила: от более специфичных к более общим
+        # Rules are evaluated from most specific to least specific
         self.rules = list(rules or [])
         self.whitelist = set(whitelist_paths or ["/health", "/metrics"])
 
@@ -65,21 +74,20 @@ class RateLimiterMiddleware(BaseHTTPMiddleware):
         for r in self.rules:
             if r.pattern.match(path):
                 return r
-        # дефолт
         return RateRule(pattern=r".*", limit=self.default_limit, window=self.default_window)
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
-        # если в тестах — пропускаем без лимитов
+        # In tests, bypass rate limiting
         if getattr(settings, "testing", False):
             return await call_next(request)
 
-        # белый список путей — пропускаем без лимита
+        # Whitelisted paths bypass rate limiting
         if request.url.path in self.whitelist:
             return await call_next(request)
 
         rule = self._pick_rule(request.url.path)
 
-        # определяем "субъект" лимита
+        # Determine the rate-limit subject
         subject = getattr(getattr(request, "state", object()), "user_id", None)
         if subject:
             ident = f"user:{subject}"
@@ -92,21 +100,20 @@ class RateLimiterMiddleware(BaseHTTPMiddleware):
 
         redis = request.app.state.redis
 
-        # Sliding window: удаляем старые, считаем, решаем.
-        # Используем пайплайн для минимизации RTT.
+        # Use a pipeline to minimize round-trips
         pipe = redis.pipeline(transaction=False)
         pipe.zremrangebyscore(key, 0, now_ms - win_ms)
         pipe.zcard(key)
         try:
             _, count = await pipe.execute()
         except Exception as e:
-            # Если Redis недоступен — graceful degradation
+            # If Redis is unavailable, degrade gracefully (do not block requests)
             req_id = request_id_ctx.get("-")
             self.logger.warning(f"[rate] Redis error, skip limiting (req_id={req_id}): {e}")
             return await call_next(request)
 
         if count >= rule.limit:
-            # берём самый старый таймстемп, чтобы понять когда окно освободится
+            # Use the oldest timestamp to compute reset/retry-after
             oldest = await redis.zrange(key, 0, 0, withscores=True)
             if oldest:
                 oldest_ts_ms = int(oldest[0][1])
@@ -128,20 +135,17 @@ class RateLimiterMiddleware(BaseHTTPMiddleware):
                 headers=headers,
             )
 
-        # ещё не достигли лимита — фиксируем текущий запрос
         member = f"{now_ms}-{uuid.uuid4().hex}"
         pipe = redis.pipeline(transaction=False)
         pipe.zadd(key, {member: now_ms})
-        pipe.expire(key, rule.window)  # чтобы ключи не накапливались
-        pipe.zcard(key)  # получим новое значение count
+        pipe.expire(key, rule.window)
+        pipe.zcard(key)
         _, _, new_count = await pipe.execute()
         remaining = max(0, rule.limit - int(new_count))
 
-        # проксируем дальше
         response = await call_next(request)
 
-        # добавим rate заголовки в ответ
-        # reset = момент, когда самый ранний элемент выпадет из окна
+        # Attach rate-limit headers to the response
         oldest = await redis.zrange(key, 0, 0, withscores=True)
         if oldest:
             oldest_ts_ms = int(oldest[0][1])

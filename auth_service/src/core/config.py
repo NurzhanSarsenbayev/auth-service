@@ -39,7 +39,7 @@ class Settings(BaseSettings):
     otel_environment: str = "local"
     otel_exporter_otlp_endpoint: str | None = None
 
-    testing: bool = False  # 👈 по умолчанию False
+    testing: bool = False  # Test-mode switch
     enable_tracer: bool = False
 
     rate_limit_window_sec: int = 60
@@ -82,7 +82,7 @@ class Settings(BaseSettings):
         return self
 
     class Config:
-        env_file = "auth_service/.env.auth"  # 👈 подхват переменных из .env
+        env_file = "auth_service/.env.auth"  # Local env file for standalone runs
         env_prefix = ""
         case_sensitive = False
 

@@ -102,6 +102,9 @@ fmt-check:
 lint:
 	ruff check $(RUFF_PATHS)
 
+lint-fix:
+	ruff check $(RUFF_PATHS) --fix
+
 typecheck:
 	MYPYPATH=auth_service/src mypy $(MYPY_PATHS)
 

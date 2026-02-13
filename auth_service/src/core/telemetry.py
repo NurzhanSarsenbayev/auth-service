@@ -10,7 +10,6 @@ from opentelemetry.sdk.trace.sampling import ParentBased, TraceIdRatioBased
 
 
 def setup_tracing(service_name: str = "auth_service"):
-    # Самплинг
     sampler = ParentBased(TraceIdRatioBased(settings.otel_sampling_ratio))
 
     resource = Resource.create(
