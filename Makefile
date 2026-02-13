@@ -12,7 +12,7 @@ TEST_COMPOSE_FILE := auth_service/tests/docker-compose.test.auth.yml
 TEST_COMPOSE := docker compose -f $(TEST_COMPOSE_FILE)
 
 .PHONY: help init-env up down ps logs logs-auth health migrate seed-roles create-superuser bootstrap
-.PHONY: test test-up test-run test-logs test-down
+.PHONY: test test-up test-run test-cov test-logs test-down
 .PHONY: fmt fmt-check lint typecheck quality check
 
 help:
@@ -26,6 +26,7 @@ help:
 	@echo "  make init-env  - create auth_service/.env.auth from sample"
 	@echo "  make create-superuser SUPERUSER_PASSWORD=StrongPass123!"
 	@echo "  make test      - run integration tests via docker compose"
+	@echo "  make test-cov  - run integration tests with coverage (docker compose)"
 	@echo "  make quality   - run ruff fmt-check + lint + mypy"
 
 init-env:
@@ -75,7 +76,18 @@ bootstrap: up migrate seed-roles health
 
 test: test-up test-run test-down
 
+COV_FAIL_UNDER ?= 75
+
+test-cov:
+	$(TEST_COMPOSE) run --rm --no-deps tests bash -lc '\
+		alembic -c alembic_test.ini upgrade head \
+		&& SUPERUSER_PASSWORD=123 python create_superuser.py \
+		&& pytest -q --cov=src --cov-config=/app/.coveragerc --cov-report=term-missing \
+			--cov-report=xml:/artifacts/coverage.xml --cov-fail-under=$(COV_FAIL_UNDER) \
+	'
+
 test-up:
+	mkdir -p auth_service/tests/.artifacts
 	$(TEST_COMPOSE) up -d --build test_postgres test_redis jaeger
 
 test-run:

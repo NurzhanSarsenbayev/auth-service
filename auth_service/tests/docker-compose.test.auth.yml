@@ -41,6 +41,9 @@ services:
       OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf"
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://jaeger:4318"
     entrypoint: ["/usr/bin/env", "bash", "/app/tests/entrypoint.test.auth.sh"]
+    volumes:
+      - ./.artifacts:/artifacts
+      - ../.coveragerc:/app/.coveragerc:ro
 
   jaeger:
     image: jaegertracing/all-in-one:1.57

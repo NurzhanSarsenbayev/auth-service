@@ -1,0 +1,19 @@
+# Coverage gate focuses on core application logic for this stage.
+# OAuth provider integrations and repository layer are excluded and can be covered by dedicated unit/contract tests.
+
+[run]
+branch = True
+source = src
+omit =
+    src/core/telemetry.py
+    src/middleware/rate_limit.py
+    src/helpers/role_helpers.py
+    src/utils/blacklist.py
+    src/core/startup_check.py
+    src/main.py
+    src/core/oauth/providers/google.py
+    src/core/oauth/providers/yandex.py
+    src/repositories/*
+[report]
+show_missing = True
+skip_covered = True
