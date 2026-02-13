@@ -4,7 +4,7 @@ from api.v1 import auth, oauth, roles, user_roles, users, well_known
 from core import telemetry
 from core.config import settings
 from core.logging import setup_logging
-from core.startup_checks import validate_runtime_environment
+from core.startup_check import validate_runtime_environment
 from db.postgres import make_engine, make_session_factory
 from db.redis_db import close_redis, init_redis
 from fastapi import FastAPI
