@@ -4,7 +4,7 @@ import redis.asyncio as Redis
 from core.config import settings
 from fastapi import HTTPException, Response
 from models import User
-from schemas.auth import TokenPair  # 👈 добавляем импорт
+from schemas.auth import TokenPair
 from sqlalchemy.ext.asyncio import AsyncSession
 from utils.jwt import (
     create_access_token,
@@ -16,7 +16,7 @@ from utils.jwt import (
 
 # ---------- Token issuing ----------
 def issue_tokens(user: User) -> TokenPair:
-    """Создаёт access и refresh токены для пользователя."""
+    """Create access and refresh tokens for a user."""
     payload = {"sub": str(user.user_id), "email": user.email}
     return TokenPair(
         access_token=create_access_token(payload),
@@ -27,19 +27,19 @@ def issue_tokens(user: User) -> TokenPair:
 
 # ---------- Cookies ----------
 def set_refresh_cookie(response: Response, refresh_token: str) -> None:
-    """Устанавливает refresh_token в HTTP-only cookie."""
+    """Set refresh token as an HTTP-only cookie."""
     response.set_cookie(
         key="refresh_token",
         value=refresh_token,
         httponly=True,
-        secure=not settings.testing,  # 👈 безопасный флаг из настроек
+        secure=not settings.testing,
         samesite="strict",
         max_age=30 * 24 * 60 * 60,  # 30 дней
     )
 
 
 def clear_refresh_cookie(response: Response) -> None:
-    """Удаляет refresh_token из cookie."""
+    """Remove refresh token cookie."""
     response.delete_cookie("refresh_token")
 
 
@@ -50,7 +50,6 @@ async def validate_refresh(
     redis: Redis,
     auth_service,
 ) -> User:
-    """Проверка refresh-токена и возврат пользователя."""
     if not refresh_token:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
@@ -87,7 +86,6 @@ async def validate_refresh(
 
 # ---------- Blacklist ----------
 async def blacklist_token(redis: Redis, token: str) -> None:
-    """Добавляет refresh_token в blacklist по его TTL."""
     ttl = get_token_ttl(token)
     payload = await decode_token(token, redis)
     jti = payload.get("jti") or token  # запасной ключ

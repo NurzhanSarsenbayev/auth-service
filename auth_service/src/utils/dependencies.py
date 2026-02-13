@@ -1,3 +1,16 @@
+"""
+FastAPI dependency providers for authentication and authorization.
+
+This module defines:
+- OAuth2 schemes (required and optional).
+- Repository/service providers.
+- Dependencies that resolve the current principal:
+  - Returns an authenticated user for a valid access token.
+  - Falls back to a "guest" principal when token is missing/invalid (for routes that allow anonymous access).
+
+Some routes require a strict authenticated user; those dependencies do not fall back to guest.
+"""
+
 import redis.asyncio as redis
 from core.oauth.providers.google import GoogleOAuthProvider
 from core.oauth.providers.yandex import YandexOAuthProvider
@@ -35,7 +48,6 @@ async def _get_user_from_token(
     session: AsyncSession,
     redis: redis.Redis,
 ) -> User | None:
-    """Возвращает ORM User из токена. Если токен битый/отсутствует → None."""
     if not token:
         return None
 
@@ -97,16 +109,13 @@ def get_user_role_service(
 # Auth dependencies
 # =============================
 async def _build_guest_principal(session: AsyncSession) -> CurrentUserResponse:
-    """Вернёт текущего пользователя-гостя (если нет валидного токена)."""
-    # Пытаемся найти роль 'guest' (через репозиторий или прямым запросом)
     try:
         role_repo = RoleRepository(session)
-        guest_role = await role_repo.get_by_name("guest")  # если метод есть
+        guest_role = await role_repo.get_by_name("guest")
     except Exception:
         guest_role = None
 
     if guest_role is None:
-        # надёжный fallback: прямой select
         res = await session.execute(select(Role).where(Role.name == "guest"))
         guest_role = res.scalar_one_or_none()
 
@@ -119,13 +128,6 @@ async def get_current_principal(
     redis_cli: redis.Redis = Depends(get_redis),
     token: str | None = Depends(oauth2_scheme_optional),
 ) -> CurrentUserResponse:
-    """
-    Возвращает:
-      - CurrentUserResponse
-      для реального пользователя при валидном access-токене
-      - CurrentUserResponse
-      гостя, если токена нет / он невалиден / не access
-    """
     if not token:
         return await _build_guest_principal(session)
 
@@ -154,10 +156,6 @@ async def get_current_principal(
     )
 
 
-# Оставляем строгую зависимость
-# для тех маршрутов, где нужен именно ORM-пользователь:
-
-
 async def get_current_user(
     session: AsyncSession = Depends(get_session),
     redis: redis.Redis = Depends(get_redis),
@@ -180,8 +178,6 @@ async def get_current_user(
 
 
 def get_current_user_with_roles(required_roles: list[str]):
-    """Декоратор-зависимость: проверка ролей."""
-
     async def dependency(
         token: str = Depends(oauth2_scheme),
         session: AsyncSession = Depends(get_session),
@@ -214,8 +210,6 @@ def get_oauth_service(db: AsyncSession = Depends(get_session)) -> OAuthService:
         "yandex": YandexOAuthProvider(),
         "google": GoogleOAuthProvider(),
     }
-    # БД отдаём отдельно через Depends (используем в handle_callback)
     svc = OAuthService(providers=providers)
-    # вернём кортеж, чтобы в хэндлере было и svc, и db
-    svc.db = db  # простая "инъекция" сеанса
+    svc.db = db
     return svc
