@@ -11,7 +11,7 @@ MYPY_PATHS := \
 TEST_COMPOSE_FILE := auth_service/tests/docker-compose.test.auth.yml
 TEST_COMPOSE := docker compose -f $(TEST_COMPOSE_FILE)
 
-.PHONY: help init-env up down ps logs logs-auth health migrate seed-roles create-superuser bootstrap
+.PHONY: help init-env up down ps logs logs-auth health ready migrate seed-roles create-superuser bootstrap
 .PHONY: test test-up test-run test-cov test-logs test-down
 .PHONY: fmt fmt-check lint typecheck quality check demo demo-clean
 
@@ -39,7 +39,7 @@ up: init-env
 	$(COMPOSE) up -d --build
 
 down:
-	$(COMPOSE) down -v
+	$(COMPOSE) down -v --remove-orphans
 
 ps:
 	$(COMPOSE) ps
@@ -62,6 +62,9 @@ health:
 		sleep 1; \
 	done; \
 	echo "FAIL: API is not reachable"; exit 1
+
+ready:
+	@curl -s -i $(API_URL)/api/v1/readyz
 
 migrate:
 	$(COMPOSE) exec auth_service alembic upgrade head

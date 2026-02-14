@@ -14,6 +14,27 @@ cp auth_service/.env.auth.sample auth_service/.env.auth
 make up
 make health
 ```
+---
+
+## Probes (health/readiness)
+
+Health (liveness-style):
+
+```bash
+curl -s http://localhost:8000/api/v1/healthz
+```
+Readiness (checks Postgres + Redis):
+
+```bash
+curl -s -i http://localhost:8000/api/v1/readyz
+```
+Expected behavior:
+
+- 200 OK when **Postgres** and **Redis** are reachable
+
+- 503 **Service Unavailable** when at least one dependency is down
+
+---
 
 ## Database initialization (explicit)
 
