@@ -6,7 +6,7 @@
 - Refresh tokens are stored and can be revoked (logout / blacklist).
 - Health and readiness probes behave correctly (readyz returns 503 when Redis/Postgres are down).
 - RBAC is enforced server-side (403 vs 201 behavior is demonstrated).
-- Startup is explicit: migrations/roles/superuser are not “magic”.
+- Startup is explicit: migrations/roles/superuser are not "magic".
 - The system is reproducible via `make demo`.
 
 ---

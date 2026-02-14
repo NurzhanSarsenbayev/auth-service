@@ -1,6 +1,5 @@
 import argparse
 import uuid
-from datetime import datetime
 
 from core.config import settings
 from models import Role
@@ -23,12 +22,10 @@ def seed(db_url: str | None = None):
         ]:
             role = session.execute(select(Role).where(Role.name == name)).scalar_one_or_none()
             if not role:
-                role = Role(
-                    role_id=uuid.uuid4(), name=name, description=desc, created_at=datetime.utcnow()
-                )
+                role = Role(role_id=uuid.uuid4(), name=name, description=desc)
                 session.add(role)
         session.commit()
-        print("✅ Roles seeded")
+        print("OK: Roles seeded")
 
 
 if __name__ == "__main__":
