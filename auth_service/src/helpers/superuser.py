@@ -73,4 +73,4 @@ def ensure_superuser(db_url: str, password: str | None = None) -> None:
             )
 
         session.commit()
-        print("✅ Superuser ensured")
+        print("OK: Superuser ensured")
