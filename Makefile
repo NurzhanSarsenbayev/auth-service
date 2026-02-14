@@ -1,6 +1,8 @@
 COMPOSE := docker compose
 ENV_FILE := auth_service/.env.auth
 
+API_URL ?= http://localhost:8000
+
 RUFF_PATHS := auth_service/src auth_service/*.py
 MYPY_PATHS := \
 	auth_service/src/core \
@@ -23,6 +25,7 @@ help:
 	@echo "  make logs      - follow logs"
 	@echo "  make logs-auth - auth service logs"
 	@echo "  make health    - check API is up"
+	@echo "  make ready     - check dependencies are ready (DB + Redis)"
 	@echo "  make init-env  - create auth_service/.env.auth from sample"
 	@echo "  make create-superuser SUPERUSER_PASSWORD=StrongPass123!"
 	@echo "  make test      - run integration tests via docker compose"
@@ -58,13 +61,25 @@ logs-redis:
 
 health:
 	@for i in 1 2 3 4 5 6 7 8 9 10; do \
-		curl -s http://localhost:8000/api/v1/healthz && exit 0; \
+		if curl -fsS "$(API_URL)/api/v1/healthz" | grep -q '"status":"ok"'; then \
+			echo "OK: healthz"; exit 0; \
+		fi; \
 		sleep 1; \
 	done; \
-	echo "FAIL: API is not reachable"; exit 1
+	echo "FAIL: API did not become healthy (healthz)"; exit 1
 
 ready:
-	@curl -s -i $(API_URL)/api/v1/readyz
+	@for i in 1 2 3 4 5 6 7 8 9 10; do \
+		code=$$(curl -sS -o /dev/null -w "%{http_code}" "$(API_URL)/api/v1/readyz"); \
+		if [ "$$code" = "200" ]; then \
+			echo "OK: readyz"; \
+			exit 0; \
+		fi; \
+		sleep 1; \
+	done; \
+	echo "FAIL: service is not ready (readyz)"; \
+	curl -sS -i "$(API_URL)/api/v1/readyz" || true; \
+	exit 1
 
 migrate:
 	$(COMPOSE) exec auth_service alembic upgrade head
@@ -93,7 +108,7 @@ test-cov:
 
 test-up:
 	mkdir -p auth_service/tests/.artifacts
-	$(TEST_COMPOSE) up -d --build test_postgres test_redis jaeger
+	$(TEST_COMPOSE) up -d --build  test_postgres test_redis jaeger
 
 test-run:
 	$(TEST_COMPOSE) run --rm --no-deps tests bash -lc '\

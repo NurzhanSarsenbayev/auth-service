@@ -13,6 +13,7 @@ cp auth_service/.env.auth.sample auth_service/.env.auth
 ```bash
 make up
 make health
+make ready
 ```
 ---
 
@@ -21,18 +22,22 @@ make health
 Health (liveness-style):
 
 ```bash
-curl -s http://localhost:8000/api/v1/healthz
+make health
 ```
 Readiness (checks Postgres + Redis):
 
 ```bash
-curl -s -i http://localhost:8000/api/v1/readyz
+make ready
 ```
 Expected behavior:
 
 - 200 OK when **Postgres** and **Redis** are reachable
 
 - 503 **Service Unavailable** when at least one dependency is down
+
+Direct calls:
+- curl -s http://localhost:8000/api/v1/healthz
+- curl -s -i http://localhost:8000/api/v1/readyz
 
 ---
 
@@ -65,7 +70,7 @@ If health check fails:
 1. Check container status: `make ps`
 2. Check logs: `make logs-auth`
 3. Verify env file exists: `auth_service/.env.auth`
-4. Recreate from scratch: `make down && make up && make health`
+4. Recreate from scratch: `make down && make up && make health && make ready`
 
 ## Clean shutdown
 

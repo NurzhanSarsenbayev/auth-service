@@ -59,7 +59,7 @@ else
   echo "OK: keys already exist"
 fi
 
-echo "==> 3) Start stack + wait for health"
+echo "==> 3) Start stack + wait for health/ready"
 make up >/dev/null
 
 # wait for health endpoint
@@ -81,6 +81,21 @@ for i in {1..20}; do
   sleep 1
   if [[ "$i" == "20" ]]; then
     echo "FAIL: API did not become healthy"
+    exit 1
+  fi
+done
+
+echo "==> 3b) Wait for readiness (/readyz)"
+for i in {1..20}; do
+  CODE="$(http_code GET "${API}/readyz")"
+  if [[ "${CODE}" == "200" ]]; then
+    echo "OK: readyz"
+    break
+  fi
+  sleep 1
+  if [[ "$i" == "20" ]]; then
+    echo "FAIL: API did not become ready (readyz)"
+    curl -sS -i "${API}/readyz" || true
     exit 1
   fi
 done

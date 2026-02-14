@@ -20,7 +20,7 @@ async def init_redis() -> redis.Redis:
 
 async def close_redis(client: redis.Redis) -> None:
     if client:
-        await client.close()
+        await client.aclose()
 
 
 # FastAPI dependency provider
