@@ -39,9 +39,11 @@ This project demonstrates:
 > OAuth providers require environment configuration.
 
 ### Observability
-- Structured logging
+- Structured logging (LOG_FORMAT=text|json)
 - OpenTelemetry tracing (optional via environment)
-- Health endpoint
+- Endpoints:
+  - GET /api/v1/healthz (liveness)
+  - GET /api/v1/readyz (readiness: DB + Redis)
 
 ---
 
@@ -102,6 +104,7 @@ This will:
 
 * Generate local JWT keys
 * Start PostgreSQL and Redis
+* Validate health/readiness probes
 * Run migrations
 * Seed roles
 * Create a superuser (if configured)
@@ -133,6 +136,15 @@ Start services:
 ```bash
 make up
 ```
+Check probes:
+
+```bash
+curl -s http://localhost:8000/api/v1/healthz
+curl -s -i http://localhost:8000/api/v1/readyz
+```
+**healthz** is a liveness-style endpoint (process is up).
+
+**readyz** is a readiness probe (Postgres + Redis reachable). Returns 503 if dependencies are down.
 
 Run migrations:
 
@@ -169,6 +181,7 @@ Important categories:
 * Cookie security flags
 * Rate limiting configuration
 * Tracing enablement
+* Logging format (LOG_FORMAT=text|json)
 
 JWT keys must be mounted via:
 

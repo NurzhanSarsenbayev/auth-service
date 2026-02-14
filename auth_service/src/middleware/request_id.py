@@ -12,9 +12,9 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
         request_id = request.headers.get("x-request-id", str(uuid.uuid4()))
         request_id_ctx.set(request_id)
 
-        logger.info(f"➡️ Request {request.method} {request.url.path}")
+        logger.info(f"Request {request.method} {request.url.path}")
         response = await call_next(request)
-        logger.info(f"⬅️ Response {response.status_code}")
+        logger.info(f"Response {response.status_code}")
 
         response.headers["x-request-id"] = request_id
         return response

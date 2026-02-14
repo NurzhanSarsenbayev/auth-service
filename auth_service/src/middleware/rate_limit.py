@@ -83,6 +83,7 @@ class RateLimiterMiddleware(BaseHTTPMiddleware):
 
         # Whitelisted paths bypass rate limiting
         if request.url.path in self.whitelist:
+            self.logger.info("[rate] skip (whitelist): %s", request.url.path)
             return await call_next(request)
 
         rule = self._pick_rule(request.url.path)

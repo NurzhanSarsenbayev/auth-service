@@ -19,7 +19,7 @@ services:
     env_file:
       - auth_service/.env.auth
     ports:
-      - "5433:5432"
+      - "15433:5432"
     volumes:
       - postgres_auth_data:/var/lib/postgresql/data
 

@@ -43,6 +43,9 @@ class Settings(BaseSettings):
     enable_tracer: bool = False
     cookie_secure: bool = False
 
+    # Logging: "text" (default) or "json"
+    log_format: str = "text"
+
     rate_limit_window_sec: int = 60
     rate_limit_max_requests: int = 100
 

@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
 
-from api.v1 import auth, health, oauth, roles, user_roles, users, well_known
+from api.v1 import auth, health, oauth, ready, roles, user_roles, users, well_known
 from core import telemetry
 from core.config import settings
 from core.logging import setup_logging
@@ -65,7 +65,7 @@ def custom_openapi():
 
 
 app.openapi = custom_openapi
-setup_logging()
+setup_logging(settings.log_format)
 if settings.enable_tracer:
     telemetry.setup_tracing("auth_service")
     telemetry.instrument_app(app)
@@ -88,7 +88,7 @@ app.add_middleware(
     rules=rules,
     default_limit=settings.rate_limit_max_requests,
     default_window=settings.rate_limit_window_sec,
-    whitelist_paths=["/healthz", "/docs", "/openapi.json"],
+    whitelist_paths=["/api/v1/healthz", "/api/v1/readyz", "/docs", "/openapi.json"],
 )
 app.add_middleware(RequestIDMiddleware)
 
@@ -101,3 +101,5 @@ app.include_router(user_roles.router, prefix="/api/v1/user_roles", tags=["user_r
 app.include_router(oauth.router, prefix="/api/v1/oauth", tags=["oauth"])
 app.include_router(well_known.router)
 app.include_router(health.router, prefix="/api/v1")
+
+app.include_router(ready.router, prefix="/api/v1")
