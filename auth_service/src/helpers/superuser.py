@@ -1,6 +1,6 @@
 import os
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from models import Role, User, UserRole
 from sqlalchemy import create_engine, select
@@ -37,8 +37,8 @@ def ensure_superuser(db_url: str, password: str | None = None) -> None:
                 email="admin@example.com",
                 hashed_password=hashed,
                 is_active=True,
-                created_at=datetime.utcnow(),
-                updated_at=datetime.utcnow(),
+                created_at=datetime.now(UTC),
+                updated_at=datetime.now(UTC),
             )
             session.add(user)
             session.flush()
@@ -50,7 +50,7 @@ def ensure_superuser(db_url: str, password: str | None = None) -> None:
                 role_id=uuid.uuid4(),
                 name="admin",
                 description="Administrator role",
-                created_at=datetime.utcnow(),
+                created_at=datetime.now(UTC),
             )
             session.add(role)
             session.flush()
@@ -68,7 +68,7 @@ def ensure_superuser(db_url: str, password: str | None = None) -> None:
                     id=uuid.uuid4(),
                     user_id=user.user_id,
                     role_id=role.role_id,
-                    assigned_at=datetime.utcnow(),
+                    assigned_at=datetime.now(UTC),
                 )
             )
 

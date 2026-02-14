@@ -1,5 +1,5 @@
 from pydantic import model_validator
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -15,11 +15,13 @@ class Settings(BaseSettings):
 
     @property
     def jwt_private_key(self) -> str:
-        return open(self.jwt_private_key_path).read()
+        with open(self.jwt_private_key_path, encoding="utf-8") as f:
+            return f.read()
 
     @property
     def jwt_public_key(self) -> str:
-        return open(self.jwt_public_key_path).read()
+        with open(self.jwt_public_key_path, encoding="utf-8") as f:
+            return f.read()
 
     redis_host: str = "localhost"
     redis_port: int = 6379
@@ -85,10 +87,11 @@ class Settings(BaseSettings):
             raise ValueError("otel_exporter_otlp_endpoint is required when ENABLE_TRACER=true")
         return self
 
-    class Config:
-        env_file = "auth_service/.env.auth"  # Local env file for standalone runs
-        env_prefix = ""
-        case_sensitive = False
+    model_config = SettingsConfigDict(
+        env_file="auth_service/.env.auth",  # Local env file for standalone runs
+        env_prefix="",
+        case_sensitive=False,
+    )
 
 
 settings = Settings()

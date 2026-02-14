@@ -2,7 +2,7 @@ from http import HTTPStatus
 
 from fastapi import HTTPException
 from fastapi_pagination import Page, Params
-from fastapi_pagination.ext.sqlalchemy import paginate
+from fastapi_pagination.ext.sqlalchemy import apaginate
 from models import LoginHistory, Role, User, UserRole
 from schemas.user import (
     UserUpdateRequest,
@@ -56,7 +56,7 @@ class UserService(BaseService):
             .where(LoginHistory.user_id == user_id)
             .order_by(LoginHistory.login_time.desc())
         )
-        return await paginate(self.repo.session, stmt, params)
+        return await apaginate(self.repo.session, stmt, params)
 
     async def update_user(
         self, current_user: User, update: UserUpdateRequest
