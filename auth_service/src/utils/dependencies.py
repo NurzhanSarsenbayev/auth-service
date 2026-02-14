@@ -119,7 +119,7 @@ async def _build_guest_principal(session: AsyncSession) -> CurrentUserResponse:
         res = await session.execute(select(Role).where(Role.name == "guest"))
         guest_role = res.scalar_one_or_none()
 
-    roles = [RoleResponse.from_orm(guest_role)] if guest_role else []
+    roles = [RoleResponse.model_validate(guest_role)] if guest_role else []
     return CurrentUserResponse(id=None, username="guest", email=None, roles=roles)
 
 
@@ -152,7 +152,7 @@ async def get_current_principal(
         user_id=user.user_id,
         username=user.username,
         email=user.email,
-        roles=[RoleResponse.from_orm(r) for r in roles],
+        roles=[RoleResponse.model_validate(r) for r in roles],
     )
 
 

@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from schemas.role import RoleResponse
 
 
@@ -10,6 +10,7 @@ class UserRoleListResponse(BaseModel):
     username: str
     roles: list[RoleResponse] = []
 
-    class Config:
-        from_attributes = True  # allow ORM -> Pydantic mapping
-        populate_by_name = True
+    model_config = ConfigDict(
+        from_attributes=True,  # allow ORM -> Pydantic mapping
+        populate_by_name=True,
+    )

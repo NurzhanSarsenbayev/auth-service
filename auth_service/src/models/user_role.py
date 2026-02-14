@@ -1,10 +1,10 @@
 import uuid
-from datetime import datetime
 
 from db.postgres import Base
 from sqlalchemy import Column, DateTime, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
+from utils.utc_now import utcnow
 
 
 class UserRole(Base):
@@ -21,7 +21,7 @@ class UserRole(Base):
         UUID(as_uuid=True), ForeignKey("roles.role_id", ondelete="CASCADE"), nullable=False
     )
 
-    assigned_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    assigned_at = Column(DateTime, default=utcnow, nullable=False)
 
     user = relationship("User", back_populates="user_roles")
     role = relationship("Role", back_populates="user_roles")

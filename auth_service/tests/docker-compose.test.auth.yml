@@ -27,7 +27,7 @@ services:
       context: ..
       dockerfile: tests/Dockerfile.test.auth
       args:
-        PYTHON_VERSION: ${PYTHON_VERSION:-3.11}
+        PYTHON_VERSION: ${PYTHON_VERSION:-3.12}
     depends_on:
       test_redis:
         condition: service_healthy
