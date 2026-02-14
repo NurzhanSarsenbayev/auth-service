@@ -14,8 +14,19 @@ TEST_COMPOSE_FILE := auth_service/tests/docker-compose.test.auth.yml
 TEST_COMPOSE := docker compose -f $(TEST_COMPOSE_FILE)
 
 .PHONY: help init-env up down ps logs logs-auth health ready migrate seed-roles create-superuser bootstrap
-.PHONY: test test-up test-run test-cov test-logs test-down
+.PHONY: test test-up test-build test-run test-cov test-logs test-down
 .PHONY: fmt fmt-check lint typecheck quality check demo demo-clean
+
+# --- Docker build flags ---
+# Usage:
+#   make test-cov NO_CACHE=1
+NO_CACHE ?= 0
+
+ifeq ($(NO_CACHE),1)
+  TEST_BUILD_FLAGS := --no-cache
+else
+  TEST_BUILD_FLAGS :=
+endif
 
 help:
 	@echo "Targets:"
@@ -61,7 +72,7 @@ logs-redis:
 
 health:
 	@for i in 1 2 3 4 5 6 7 8 9 10; do \
-		if curl -fsS "$(API_URL)/api/v1/healthz" | grep -q '"status":"ok"'; then \
+		if curl -fsS "$(API_URL)/api/v1/healthz" 2>/dev/null | grep -q '"status":"ok"'; then \
 			echo "OK: healthz"; exit 0; \
 		fi; \
 		sleep 1; \
@@ -70,7 +81,7 @@ health:
 
 ready:
 	@for i in 1 2 3 4 5 6 7 8 9 10; do \
-		code=$$(curl -sS -o /dev/null -w "%{http_code}" "$(API_URL)/api/v1/readyz"); \
+		code=$$(curl -sS -o /dev/null -w "%{http_code}" "$(API_URL)/api/v1/readyz" 2>/dev/null); \
 		if [ "$$code" = "200" ]; then \
 			echo "OK: readyz"; \
 			exit 0; \
@@ -98,7 +109,11 @@ test: test-up test-run test-down
 
 COV_FAIL_UNDER ?= 75
 
-test-cov:
+test-build:
+	mkdir -p auth_service/tests/.artifacts
+	$(TEST_COMPOSE) build $(TEST_BUILD_FLAGS) tests
+
+test-cov: test-build
 	$(TEST_COMPOSE) run --rm --no-deps tests bash -lc '\
 		alembic -c alembic_test.ini upgrade head \
 		&& SUPERUSER_PASSWORD=123 python create_superuser.py \
