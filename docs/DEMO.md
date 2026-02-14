@@ -43,7 +43,7 @@ Initialize environment:
 
 ```bash
 make init-env
-````
+```
 
 Edit:
 
@@ -198,7 +198,7 @@ curl -i -X POST http://localhost:8000/api/v1/roles/create \
   -d '{"name":"editor","description":"demo role"}'
 ```
 
-Expected: `201 Created`
+Expected: ```201 Created```
 
 ---
 

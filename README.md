@@ -1,7 +1,8 @@
 # Auth Service (JWT + RBAC + OAuth)
 ![CI](https://github.com/NurzhanSarsenbayev/auth-service/actions/workflows/ci.yml/badge.svg?branch=main)
 
-A production-minded authentication and authorization service built with FastAPI.
+A production-minded authentication and authorization service built with FastAPI,
+designed to demonstrate explicit operational control, security boundaries, and reproducible infrastructure.
 
 **One-command demo:**
 
@@ -15,7 +16,6 @@ This project demonstrates:
 - **OAuth** integration
 - **Redis**-backed rate limiting
 - **CI quality** gate with coverage
-- Designed as a **portfolio-grade** backend service.
 
 ---
 
@@ -50,8 +50,6 @@ This project demonstrates:
 ## Architecture Overview
 
 ```
-
-```
             +--------------------+
             |    Client / API    |
             +----------+---------+
@@ -68,7 +66,6 @@ This project demonstrates:
     +------------------+------------------+
     |                                     |
     v                                     v
-```
 
 +-------------------+               +-------------------+
 |    PostgreSQL     |               |      Redis        |
@@ -77,11 +74,11 @@ This project demonstrates:
 | Roles             |               | Token blacklist   |
 | Login history     |               +-------------------+
 +-------------------+
+```
 
-JWT signing keys are mounted via volume.
-Public keys are exposed via JWKS endpoint.
+- JWT signing keys are mounted via volume.
+- Public keys are exposed via JWKS endpoint.
 
-````
 
 ### Trust Boundaries
 
@@ -98,7 +95,7 @@ The recommended way to run the service:
 
 ```bash
 make demo
-````
+```
 
 This will:
 
@@ -111,7 +108,10 @@ This will:
 * Perform signup / login
 * Demonstrate RBAC enforcement
 * Demonstrate refresh flow
-* Output `DEMO SUCCESS`
+* SUCCESS
+  * Swagger UI: ...
+  * JWKS: ...
+  * Artifacts: ...
 
 Clean up afterwards:
 
@@ -230,8 +230,7 @@ Python versions tested:
 * 3.11
 * 3.12
 
-The CI is designed to reflect the actual project state.
-No undocumented behavior.
+CI reflects the actual project state. No hidden steps or undocumented behavior.
 
 ---
 
@@ -258,6 +257,7 @@ auth_service/
         utils/
     alembic/
     tests/
+    keys/ (local-only, not committed)
 docs/
 Makefile
 docker-compose.yml
