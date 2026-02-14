@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# NOTE: demo should use Makefile helpers (single source of truth).
 DEMO_DIR=".demo"
 AUTH_URL="${AUTH_URL:-http://localhost:8000}"
 API="${AUTH_URL}/api/v1"
@@ -59,31 +60,14 @@ else
   echo "OK: keys already exist"
 fi
 
-echo "==> 3) Start stack + wait for health"
+echo "==> 3) Start stack + wait for health/ready"
 make up >/dev/null
 
-# wait for health endpoint
+echo "==> 3a) Wait for healthz (via make health)"
+make health >/dev/null
 
-# wait for container to be running
-for i in {1..20}; do
-  if docker compose -f ./docker-compose.yml ps | grep -q "auth_service.*running"; then
-    break
-  fi
-  sleep 1
-done
-
-# now wait for HTTP readiness
-for i in {1..20}; do
-  if curl --retry 5 --retry-all-errors --retry-delay 1 -fsS "${API}/healthz" | grep -q '"status":"ok"'; then
-    echo "OK: healthz"
-    break
-  fi
-  sleep 1
-  if [[ "$i" == "20" ]]; then
-    echo "FAIL: API did not become healthy"
-    exit 1
-  fi
-done
+echo "==> 3b) Wait for readyz (via make ready)"
+make ready >/dev/null
 
 echo "==> 4) Explicit bootstrap (migrate, seed roles, superuser)"
 make migrate >/dev/null

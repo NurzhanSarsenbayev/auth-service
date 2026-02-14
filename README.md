@@ -139,12 +139,14 @@ make up
 Check probes:
 
 ```bash
-curl -s http://localhost:8000/api/v1/healthz
-curl -s -i http://localhost:8000/api/v1/readyz
+make health
+make ready
 ```
 **healthz** is a liveness-style endpoint (process is up).
 
 **readyz** is a readiness probe (Postgres + Redis reachable). Returns 503 if dependencies are down.
+
+You can also call the endpoints directly: **/api/v1/healthz** and **/api/v1/readyz**
 
 Run migrations:
 

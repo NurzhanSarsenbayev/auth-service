@@ -4,7 +4,7 @@
 
 - Tokens are signed with RS256 and can be verified via JWKS.
 - Refresh tokens are stored and can be revoked (logout / blacklist).
-- - Health and readiness probes behave correctly (readyz returns 503 when Redis/Postgres are down).
+- Health and readiness probes behave correctly (readyz returns 503 when Redis/Postgres are down).
 - RBAC is enforced server-side (403 vs 201 behavior is demonstrated).
 - Startup is explicit: migrations/roles/superuser are not “magic”.
 - The system is reproducible via `make demo`.
@@ -83,6 +83,7 @@ openssl rsa -in auth_service/keys/jwtRS256.key -pubout -out auth_service/keys/jw
 ```bash
 make up
 make health
+make ready
 ```
 
 Swagger UI:

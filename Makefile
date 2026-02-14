@@ -1,6 +1,8 @@
 COMPOSE := docker compose
 ENV_FILE := auth_service/.env.auth
 
+API_URL ?= http://localhost:8000
+
 RUFF_PATHS := auth_service/src auth_service/*.py
 MYPY_PATHS := \
 	auth_service/src/core \
@@ -12,8 +14,19 @@ TEST_COMPOSE_FILE := auth_service/tests/docker-compose.test.auth.yml
 TEST_COMPOSE := docker compose -f $(TEST_COMPOSE_FILE)
 
 .PHONY: help init-env up down ps logs logs-auth health ready migrate seed-roles create-superuser bootstrap
-.PHONY: test test-up test-run test-cov test-logs test-down
+.PHONY: test test-up test-build test-run test-cov test-logs test-down
 .PHONY: fmt fmt-check lint typecheck quality check demo demo-clean
+
+# --- Docker build flags ---
+# Usage:
+#   make test-cov NO_CACHE=1
+NO_CACHE ?= 0
+
+ifeq ($(NO_CACHE),1)
+  TEST_BUILD_FLAGS := --no-cache
+else
+  TEST_BUILD_FLAGS :=
+endif
 
 help:
 	@echo "Targets:"
@@ -23,6 +36,7 @@ help:
 	@echo "  make logs      - follow logs"
 	@echo "  make logs-auth - auth service logs"
 	@echo "  make health    - check API is up"
+	@echo "  make ready     - check dependencies are ready (DB + Redis)"
 	@echo "  make init-env  - create auth_service/.env.auth from sample"
 	@echo "  make create-superuser SUPERUSER_PASSWORD=StrongPass123!"
 	@echo "  make test      - run integration tests via docker compose"
@@ -58,13 +72,25 @@ logs-redis:
 
 health:
 	@for i in 1 2 3 4 5 6 7 8 9 10; do \
-		curl -s http://localhost:8000/api/v1/healthz && exit 0; \
+		if curl -fsS "$(API_URL)/api/v1/healthz" 2>/dev/null | grep -q '"status":"ok"'; then \
+			echo "OK: healthz"; exit 0; \
+		fi; \
 		sleep 1; \
 	done; \
-	echo "FAIL: API is not reachable"; exit 1
+	echo "FAIL: API did not become healthy (healthz)"; exit 1
 
 ready:
-	@curl -s -i $(API_URL)/api/v1/readyz
+	@for i in 1 2 3 4 5 6 7 8 9 10; do \
+		code=$$(curl -sS -o /dev/null -w "%{http_code}" "$(API_URL)/api/v1/readyz" 2>/dev/null); \
+		if [ "$$code" = "200" ]; then \
+			echo "OK: readyz"; \
+			exit 0; \
+		fi; \
+		sleep 1; \
+	done; \
+	echo "FAIL: service is not ready (readyz)"; \
+	curl -sS -i "$(API_URL)/api/v1/readyz" || true; \
+	exit 1
 
 migrate:
 	$(COMPOSE) exec auth_service alembic upgrade head
@@ -83,7 +109,11 @@ test: test-up test-run test-down
 
 COV_FAIL_UNDER ?= 75
 
-test-cov:
+test-build:
+	mkdir -p auth_service/tests/.artifacts
+	$(TEST_COMPOSE) build $(TEST_BUILD_FLAGS) tests
+
+test-cov: test-build
 	$(TEST_COMPOSE) run --rm --no-deps tests bash -lc '\
 		alembic -c alembic_test.ini upgrade head \
 		&& SUPERUSER_PASSWORD=123 python create_superuser.py \
@@ -93,7 +123,7 @@ test-cov:
 
 test-up:
 	mkdir -p auth_service/tests/.artifacts
-	$(TEST_COMPOSE) up -d --build test_postgres test_redis jaeger
+	$(TEST_COMPOSE) up -d --build  test_postgres test_redis jaeger
 
 test-run:
 	$(TEST_COMPOSE) run --rm --no-deps tests bash -lc '\
