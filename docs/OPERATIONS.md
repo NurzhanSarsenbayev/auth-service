@@ -1,79 +1,184 @@
 # Operations
 
-> For a reproducible end-to-end run, use `make demo` (see `docs/DEMO.md`).
+This document describes manual standalone operation of the service.
 
-## Standalone run
-### 1) Configure environment
+For a fully reproducible end-to-end validation, use:
+
 ```bash
-cp auth_service/.env.auth.sample auth_service/.env.auth
+make demo
 ```
+
+See `docs/DEMO.md` for details.
+
+---
+
+## Standalone Lifecycle
+
+### 0) Ensure RSA keys exist
+
+The service fails fast if RSA key material is missing.
+
+Keys must be available in:
+
+```
+auth_service/keys/
+```
+
+You can generate keys using the same flow as the demo (`docs/DEMO.md`),
+or mount your own key pair (instructions in `auth_service/keys/README.md`).
+
+---
+
+### 1) Configure environment
+
+Create the environment file:
+
+```bash
+make init-env
+```
+
+This copies:
+
+```
+auth_service/.env.auth.sample
+```
+
+to:
+
+```
+auth_service/.env.auth
+```
+
+Review and adjust values if necessary.
+
+---
 
 ### 2) Start services
 
 ```bash
 make up
-make health
-make ready
 ```
----
 
-## Probes (health/readiness)
-
-Health (liveness-style):
+Check liveness:
 
 ```bash
 make health
 ```
-Readiness (checks Postgres + Redis):
+
+Check readiness:
 
 ```bash
 make ready
 ```
-Expected behavior:
 
-- 200 OK when **Postgres** and **Redis** are reachable
+* **healthz** → process is running
+* **readyz** → Postgres and Redis are reachable
+* `readyz` returns **503** if dependencies are unavailable
 
-- 503 **Service Unavailable** when at least one dependency is down
+You can also call:
 
-Direct calls:
-- curl -s http://localhost:8000/api/v1/healthz
-- curl -s -i http://localhost:8000/api/v1/readyz
+* `/api/v1/healthz`
+* `/api/v1/readyz`
+
+directly via curl or browser.
 
 ---
 
-## Database initialization (explicit)
+### 3) Initialize database (explicit)
+
+The service does not auto-run migrations.
+
+Run:
 
 ```bash
 make migrate
+```
+
+Seed roles:
+
+```bash
 make seed-roles
 ```
 
-## Superuser creation (optional)
+No implicit bootstrap logic is executed at startup.
 
-Superuser is created **only** when `SUPERUSER_PASSWORD` is set:
+---
+
+### 4) Create superuser (optional)
+
+Superuser creation requires explicit configuration.
+
+If `SUPERUSER_PASSWORD` is set in `.env.auth`, run:
 
 ```bash
 make create-superuser
 ```
 
-## Logs and troubleshooting
+If not configured, this step is intentionally skipped.
+
+---
+
+## Logs
+
+Inspect container state:
 
 ```bash
 make ps
+```
+
+View logs:
+
+```bash
 make logs-auth
 make logs-postgres-auth
 make logs-redis
 ```
 
-If health check fails:
+---
 
-1. Check container status: `make ps`
-2. Check logs: `make logs-auth`
-3. Verify env file exists: `auth_service/.env.auth`
-4. Recreate from scratch: `make down && make up && make health && make ready`
+## Troubleshooting
+
+### Service exits immediately (fail-fast)
+
+* Verify RSA keys exist in `auth_service/keys/`
+* Verify `auth_service/.env.auth` is present
+* Check logs: `make logs-auth`
+
+The service intentionally does not start in degraded mode.
+
+---
+
+### `readyz` returns 503
+
+* Verify Postgres and Redis containers are healthy: `make ps`
+* Check logs:
+
+  * `make logs-postgres-auth`
+  * `make logs-redis`
+  * `make logs-auth`
+
+---
+
+### Health check fails
+
+1. Confirm containers are running: `make ps`
+2. Inspect logs: `make logs-auth`
+3. Verify environment configuration
+4. Restart cleanly:
+
+```bash
+make down
+make up
+make health
+make ready
+```
+
+---
 
 ## Clean shutdown
 
 ```bash
 make down
 ```
+
+This stops all containers but preserves volumes unless explicitly removed.

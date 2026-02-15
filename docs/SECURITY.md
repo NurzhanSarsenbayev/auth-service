@@ -26,6 +26,16 @@ and known limitations.
   - token type (access),
   - application claims (sub, roles, etc.).
 
+## Trust Model
+
+- X-Forwarded-For headers are trusted only when TRUST_PROXY_HEADERS=true.
+- OAuth providers are treated as external identity authorities.
+- Redis is considered internal infrastructure.
+- PostgreSQL is not exposed to public clients.
+- Private keys must never be committed to the repository.
+
+Security boundaries are explicit and documented.
+
 ---
 
 ## Key handling (RS256 / JWKS)
