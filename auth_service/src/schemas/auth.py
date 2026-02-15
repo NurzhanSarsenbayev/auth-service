@@ -15,6 +15,11 @@ class TokenPair(BaseModel):
     token_type: str = "bearer"
 
 
+class AccessTokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+
 class RegisterRequest(BaseModel):
     username: str  # OAuth2 username
     email: EmailStr  # optional, if you want to store email

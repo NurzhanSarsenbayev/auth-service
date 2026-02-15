@@ -1,6 +1,8 @@
 from http import HTTPStatus
 
 import redis.asyncio as Redis
+import jwt as pyjwt
+
 from core.config import settings
 from fastapi import HTTPException, Response
 from models import User
@@ -11,6 +13,7 @@ from utils.jwt import (
     create_refresh_token,
     decode_token,
     get_token_ttl,
+    REFRESH_TOKEN_EXPIRE_DAYS,
 )
 
 
@@ -34,7 +37,7 @@ def set_refresh_cookie(response: Response, refresh_token: str) -> None:
         httponly=True,
         secure=settings.cookie_secure,
         samesite="strict",
-        max_age=30 * 24 * 60 * 60,  # 30 days
+        max_age=REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,  # 30 days
     )
 
 
@@ -87,6 +90,16 @@ async def validate_refresh(
 # ---------- Blacklist ----------
 async def blacklist_token(redis: Redis, token: str) -> None:
     ttl = get_token_ttl(token)
-    payload = await decode_token(token, redis)
-    jti = payload.get("jti") or token  # fallback key if JTI is missing
+    if ttl <= 0:
+        return  # expired/invalid ttl -> nothing to store
+
+    # decode without blacklist check (and without exp verification)
+    payload = pyjwt.decode(
+        token,
+        settings.jwt_public_key,
+        algorithms=[settings.jwt_algorithm],
+        options={"verify_exp": False},
+    )
+
+    jti = payload.get("jti") or token
     await redis.setex(f"blacklist:{jti}", ttl, "1")

@@ -77,7 +77,20 @@ class AuthService(BaseService):
 
     async def refresh_by_cookie(self, refresh_token: str | None) -> TokenPair:
         user = await validate_refresh(refresh_token, self.repo.session, self.redis, self)
-        return issue_tokens(user)
+
+        # 1) revoke old refresh immediately
+        if self.redis and refresh_token:
+            await blacklist_token(self.redis, refresh_token)
+            await self.redis.srem(f"user_refresh:{user.user_id}", refresh_token)
+
+        # 2) issue new pair
+        tokens: TokenPair = issue_tokens(user)
+
+        # 3) track new refresh
+        if self.redis:
+            await self.redis.sadd(f"user_refresh:{user.user_id}", tokens.refresh_token)
+
+        return tokens
 
     async def logout_by_cookie(
         self, refresh_token: str | None, response: Response
