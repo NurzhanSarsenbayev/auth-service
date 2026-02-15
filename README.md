@@ -1,117 +1,51 @@
 # Auth Service (JWT + RBAC + OAuth)
 ![CI](https://github.com/NurzhanSarsenbayev/auth-service/actions/workflows/ci.yml/badge.svg?branch=main)
 
-A production-minded authentication and authorization service built with FastAPI,
-designed to demonstrate explicit operational control, security boundaries, and reproducible infrastructure.
+An operationally aware authentication service focused on explicit runtime guarantees,
+revocable tokens, and infrastructure reproducibility.
 
-**One-command demo:**
+It emphasizes predictable startup, clear dependency contracts, and CI-enforced correctness.
 
-```bash
-make demo
-```
-This project demonstrates:
-- **RS256 JWT** + **JWKS**
-- **Refresh** token revocation
-- **RBAC** enforcement
-- **OAuth** integration
-- **Redis**-backed rate limiting
-- **CI quality** gate with coverage
+## Operational Contract
 
----
+This service enforces explicit runtime guarantees:
 
-## Implemented Features
+- The service does not start without valid RSA key files (fail-fast).
+- Redis is a required runtime dependency (rate limiting + refresh revocation).
+- Health (`/api/v1/healthz`) and readiness (`/api/v1/readyz`) are intentionally separated.
+- No implicit database seeding or hidden bootstrap logic.
+- Superuser creation requires explicit environment configuration.
 
-### Authentication
-- Access & Refresh tokens (RS256)
-- Secure HTTP-only refresh cookie
-- Token blacklist (Redis)
-- Logout (single token / all tokens)
-
-### Authorization
-- RBAC with role assignment
-- Protected endpoints with role enforcement
-
-### OAuth
-- Google OAuth
-- Yandex OAuth
-- Deterministic fallback username generation
-
-> OAuth providers require environment configuration.
-
-### Observability
-- Structured logging (LOG_FORMAT=text|json)
-- OpenTelemetry tracing (optional via environment)
-- Endpoints:
-  - GET /api/v1/healthz (liveness)
-  - GET /api/v1/readyz (readiness: DB + Redis)
+These constraints are intentional and documented.
 
 ---
 
-## Architecture Overview
+## Architecture
 
-```
-            +--------------------+
-            |    Client / API    |
-            +----------+---------+
-                       |
-                       v
-            +--------------------+
-            |     FastAPI App    |
-            |--------------------|
-            | Routers            |
-            | Services           |
-            | Repositories       |
-            +----------+---------+
-                       |
-    +------------------+------------------+
-    |                                     |
-    v                                     v
+High-level architecture and operational principles are documented in:
 
-+-------------------+               +-------------------+
-|    PostgreSQL     |               |      Redis        |
-|-------------------|               |-------------------|
-| Users             |               | Rate limiting     |
-| Roles             |               | Token blacklist   |
-| Login history     |               +-------------------+
-+-------------------+
-```
-
-- JWT signing keys are mounted via volume.
-- Public keys are exposed via JWKS endpoint.
-
-
-### Trust Boundaries
-
-- JWT private key is never committed.
-- Refresh tokens are revocable via Redis blacklist.
-- Proxy headers must only be trusted behind a secure reverse proxy.
-- See `docs/SECURITY.md` for threat model and limitations.
+docs/ARCHITECTURE.md
 
 ---
 
 ## Quickstart (Reproducible Demo)
 
-The recommended way to run the service:
+This demo proves the operational contract: fail-fast keys,
+reproducible infra, and enforceable authZ (RBAC) with revocable refresh tokens.
 
 ```bash
 make demo
 ```
 
 This will:
-
-* Generate local JWT keys
-* Start PostgreSQL and Redis
-* Validate health/readiness probes
-* Run migrations
-* Seed roles
-* Create a superuser (if configured)
-* Perform signup / login
-* Demonstrate RBAC enforcement
-* Demonstrate refresh flow
-* SUCCESS
-  * Swagger UI: ...
-  * JWKS: ...
-  * Artifacts: ...
+- Generate local keys
+- Start Postgres + Redis
+- Validate health/readiness
+- Run migrations and seed roles
+- Demonstrate signup/login, RBAC and refresh flow
+  * Swagger UI: http://localhost:8000/docs
+  * JWKS:      http://localhost:8000/.well-known/jwks.json
+  * Artifacts: .demo/ (tokens + cookies from the demo run)
 
 Clean up afterwards:
 
@@ -233,6 +167,24 @@ Python versions tested:
 CI reflects the actual project state. No hidden steps or undocumented behavior.
 
 ---
+## Design Decisions
+
+- **RS256 instead of HS256** — enables public key distribution via JWKS and avoids symmetric key sharing.
+- **Redis-backed revocation** — decouples token invalidation from primary storage.
+- **Fail-fast startup model** — prevents undefined runtime states.
+- **Docker-first development model** — ensures CI/local parity.
+
+## Non-Goals
+
+This project intentionally does not implement:
+
+- Key rotation strategy
+- Multi-tenant isolation
+- Distributed horizontal rate limiting
+- Production-grade secret storage (Vault/KMS)
+- Full OAuth provider compliance validation
+
+The goal is architectural clarity and operational correctness, not feature completeness.
 
 ## Roadmap (Honest & Short)
 

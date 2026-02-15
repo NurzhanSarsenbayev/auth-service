@@ -105,6 +105,10 @@ bootstrap: up migrate seed-roles health
 
 # --- Tests ---
 
+test-init-env:
+	@test -f auth_service/tests/.env.test.auth || cp auth_service/tests/.env.test.auth.example auth_service/tests/.env.test.auth
+	@echo "OK: auth_service/tests/.env.test.auth"
+
 test: test-up test-run test-down
 
 COV_FAIL_UNDER ?= 75
