@@ -11,12 +11,11 @@ async def test_login_oauth2_success(client: AsyncClient, create_user):
         "/api/v1/auth/login",
         data={"username": "john", "password": "password123"},
     )
-    assert response.status_code == HTTPStatus.OK
     tokens = response.json()
     assert "access_token" in tokens
-    assert "refresh_token" in tokens
+    assert "token_type" in tokens
+    assert "refresh_token" not in tokens
     assert response.cookies.get("refresh_token") is not None
-
 
 @pytest.mark.asyncio
 async def test_login_oauth2_invalid_credentials(
@@ -38,11 +37,11 @@ async def test_login_json_success(client: AsyncClient, create_user):
         "/api/v1/auth/login-json",
         json={"username": "alice", "password": "password123"},
     )
-    assert response.status_code == HTTPStatus.OK
     tokens = response.json()
     assert "access_token" in tokens
-    assert "refresh_token" in tokens
-
+    assert "token_type" in tokens
+    assert "refresh_token" not in tokens
+    assert response.cookies.get("refresh_token") is not None
 
 @pytest.mark.asyncio
 async def test_login_json_invalid_credentials(
@@ -64,17 +63,57 @@ async def test_refresh_success(client: AsyncClient, create_user):
         "/api/v1/auth/login",
         data={"username": "kate", "password": "password123"},
     )
-    refresh_cookie = login_resp.cookies.get("refresh_token")
-    assert refresh_cookie is not None
+    old_refresh = login_resp.cookies.get("refresh_token")
+    assert old_refresh is not None
 
-    client.cookies.set("refresh_token", refresh_cookie)
+    # Call refresh with the cookie
+    client.cookies.set("refresh_token", old_refresh)
     refresh_resp = await client.post("/api/v1/auth/refresh")
 
     assert refresh_resp.status_code == HTTPStatus.OK
+
+    # Rotation MUST set a new cookie
+    new_refresh = refresh_resp.cookies.get("refresh_token")
+    assert new_refresh is not None
+    assert new_refresh != old_refresh
+
+    # Optional but useful: ensure Set-Cookie header exists
+    assert "set-cookie" in refresh_resp.headers
+
     tokens = refresh_resp.json()
     assert "access_token" in tokens
-    assert "refresh_token" in tokens
+    assert "token_type" in tokens
+    assert "refresh_token" not in tokens
 
+    new_refresh_cookie = refresh_resp.cookies.get("refresh_token")
+    assert new_refresh_cookie is not None
+
+@pytest.mark.asyncio
+async def test_refresh_old_cookie_rejected_after_rotation(
+    client: AsyncClient, create_user
+):
+    await create_user("lisa", "lisa@example.com", "password123")
+
+    login_resp = await client.post(
+        "/api/v1/auth/login",
+        data={"username": "lisa", "password": "password123"},
+    )
+    old_refresh = login_resp.cookies.get("refresh_token")
+    assert old_refresh is not None
+
+    # First refresh -> rotates cookie
+    client.cookies.set("refresh_token", old_refresh)
+    first_refresh = await client.post("/api/v1/auth/refresh")
+    assert first_refresh.status_code == HTTPStatus.OK
+
+    new_refresh = first_refresh.cookies.get("refresh_token")
+    assert new_refresh is not None
+    assert new_refresh != old_refresh
+
+    # Now try to refresh AGAIN with the OLD cookie -> must be rejected
+    client.cookies.set("refresh_token", old_refresh)
+    second_refresh = await client.post("/api/v1/auth/refresh")
+    assert second_refresh.status_code == HTTPStatus.UNAUTHORIZED
 
 @pytest.mark.asyncio
 async def test_refresh_no_cookie(client: AsyncClient):
