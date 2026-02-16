@@ -41,11 +41,6 @@ You must explicitly provide a superuser password (no hidden seed).
 ```bash
 export SUPERUSER_PASSWORD='StrongPass123!'
 ```
-PowerShell:
-
-```powershell
-$env:SUPERUSER_PASSWORD="StrongPass123!"
-```
 
 ```bash
 make demo
@@ -68,6 +63,23 @@ make demo-clean
 ```
 
 Full demo explanation: `docs/DEMO.md`
+
+---
+
+## Local quality checks (host tooling)
+
+`make check` and `pre-commit` run local developer tools (ruff, mypy, etc.).
+Create a virtualenv and install both runtime and dev requirements:
+
+```bash
+python -m venv venv
+source venv/Scripts/activate  # Windows Git Bash
+pip install -r auth_service/requirements.runtime.txt
+pip install -r auth_service/requirements.dev.txt
+
+make check
+make precommit
+```
 
 ---
 

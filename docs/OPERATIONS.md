@@ -199,8 +199,11 @@ This stops all containers but preserves volumes unless explicitly removed.
 ```bash
 python -m venv venv
 source venv/Scripts/activate  # Windows Git Bash
+pip install -r auth_service/requirements.runtime.txt
 pip install -r auth_service/requirements.dev.txt
+
 make check
+make precommit
 ```
 
 Optional auto-fix:
@@ -208,5 +211,12 @@ Optional auto-fix:
 ```bash
 make lint-fix
 ```
+### Test image requirements
+
+The CI/test Docker image installs runtime dependencies first, then adds test tooling from:
+`auth_service/tests/requirements.test.ci.txt`.
+
+Local development does not require a separate test requirements file if you installed
+`requirements.runtime.txt` + `requirements.dev.txt` in a virtualenv.
 
 ---
