@@ -51,6 +51,14 @@ auth_service/.env.auth
 
 Review and adjust values if necessary.
 
+#### Running behind a reverse proxy (optional)
+
+By default the service does **not** trust forwarded headers.
+
+- Set `TRUST_PROXY_HEADERS=true` only if the service is behind a trusted reverse proxy.
+- If possible, set `TRUSTED_PROXY_IPS` (comma-separated) to allow forwarded headers only from that proxy.
+- If you terminate TLS in front of the service, set `COOKIE_SECURE=true` so the refresh cookie is marked as `Secure`.
+
 ---
 
 ### 2) Start services

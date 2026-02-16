@@ -12,12 +12,21 @@ from starlette.responses import JSONResponse
 
 
 def _client_ip(request: Request) -> str:
-    # Trust X-Forwarded-For only when service is behind a trusted proxy
+    peer_ip = request.client.host if request.client else None
+
+    # Trust X-Forwarded-For only when explicitly enabled AND (optionally) coming from an allowlisted proxy.
     if settings.trust_proxy_headers:
+        allowed = getattr(settings, "trusted_proxy_ip_set", set())
+        if allowed and peer_ip not in allowed:
+            return peer_ip or "unknown"
+
         forwarded = request.headers.get("x-forwarded-for")
         if forwarded:
-            return forwarded.split(",")[0].strip()
-    return request.client.host if request.client else "unknown"
+            first = forwarded.split(",")[0].strip()
+            if first:
+                return first
+
+    return peer_ip or "unknown"
 
 
 class RateRule:
