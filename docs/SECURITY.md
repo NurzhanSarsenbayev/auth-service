@@ -67,7 +67,8 @@ Security boundaries are explicit and documented.
   - `HttpOnly=true`
   - `Secure=true` outside testing mode
   - `SameSite=Strict`
-- Refresh flow issues a new token pair and updates cookie.
+- Refresh flow rotates the refresh token (new refresh is stored in the HTTP-only cookie).
+- The API response body returns only a new access token (refresh is never returned in JSON).
 
 ### Revocation / logout
 - Refresh token revocation is implemented via **Redis blacklist** keyed by `jti` with TTL until token expiration.

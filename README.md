@@ -45,7 +45,7 @@ This will:
 - Demonstrate signup/login, RBAC and refresh flow
   * Swagger UI: http://localhost:8000/docs
   * JWKS:      http://localhost:8000/.well-known/jwks.json
-  * Artifacts: .demo/ (tokens + cookies from the demo run)
+  * Artifacts: .demo/ (access token responses + cookies from the demo run)
 
 Clean up afterwards:
 

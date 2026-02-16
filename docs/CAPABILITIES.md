@@ -14,9 +14,9 @@ The focus is not feature completeness, but architectural discipline.
 
 The authentication flow prioritizes explicit token lifecycle control and revocation semantics.
 
-- Access & Refresh tokens (RS256)
-- Secure HTTP-only refresh cookie
-- Token blacklist (Redis)
+- Access tokens (RS256, verified via JWKS)
+- Refresh token stored only in a secure HTTP-only cookie (never returned in JSON)
+- Refresh rotation + revocation (Redis blacklist)
 - Logout (single token / all tokens)
 
 ---

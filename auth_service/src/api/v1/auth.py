@@ -2,10 +2,10 @@ from http import HTTPStatus
 
 from fastapi import APIRouter, Cookie, Depends, Request, Response
 from fastapi.security import OAuth2PasswordRequestForm
-from schemas.auth import LoginRequest, TokenPair, AccessTokenResponse
+from helpers.auth_helpers import set_refresh_cookie
+from schemas.auth import AccessTokenResponse, LoginRequest
 from services.auth import AuthService
 from utils.dependencies import get_auth_service
-from helpers.auth_helpers import set_refresh_cookie
 
 router = APIRouter()
 
