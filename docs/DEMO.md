@@ -205,12 +205,33 @@ Expected: ```201 Created```
 ## 11) Refresh flow (cookie-based)
 
 ```bash
+# Refresh rotates the refresh cookie:
+# - reads refresh token from cookie jar
+# - writes a NEW refresh token back to cookie jar
+# - returns ONLY a new access token in the response body
 curl -s -X POST http://localhost:8000/api/v1/auth/refresh \
-  -b .demo/cookies_admin.txt
+  -b .demo/cookies_admin.txt \
+  -c .demo/cookies_admin_rotated.txt > .demo/tokens_admin_refreshed.json
 ```
+Expected:
 
-Expected: new access token.
+Response body contains a new access token (no refresh token in JSON).
 
+Cookie jar is updated with a new refresh_token.
+
+Verify rotation behavior:
+
+```bash
+# Old cookie must be rejected after rotation:
+curl -i -X POST http://localhost:8000/api/v1/auth/refresh \
+  -b .demo/cookies_admin.txt
+# Expected: 401 {"detail":"Token revoked"}
+
+# New cookie should work:
+curl -i -X POST http://localhost:8000/api/v1/auth/refresh \
+  -b .demo/cookies_admin_rotated.txt
+# Expected: 200 + Set-Cookie refresh_token=...
+```
 ---
 
 ## 12) Cleanup

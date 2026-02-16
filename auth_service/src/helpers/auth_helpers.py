@@ -1,19 +1,18 @@
 from http import HTTPStatus
 
-import redis.asyncio as Redis
 import jwt as pyjwt
-
+import redis.asyncio as Redis
 from core.config import settings
 from fastapi import HTTPException, Response
 from models import User
 from schemas.auth import TokenPair
 from sqlalchemy.ext.asyncio import AsyncSession
 from utils.jwt import (
+    REFRESH_TOKEN_EXPIRE_DAYS,
     create_access_token,
     create_refresh_token,
     decode_token,
     get_token_ttl,
-    REFRESH_TOKEN_EXPIRE_DAYS,
 )
 
 
