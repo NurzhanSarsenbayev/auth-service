@@ -16,7 +16,8 @@ async def test_build_guest_principal_uses_role_repo(monkeypatch):
 
     principal = await dependencies._build_guest_principal(session)
 
-    assert principal.user is None
+    assert principal.user_id is None
+    assert principal.username == "guest"
     assert principal.roles
     assert principal.roles[0].name == "guest"
 
@@ -25,7 +26,6 @@ async def test_build_guest_principal_uses_role_repo(monkeypatch):
 async def test_build_guest_principal_fallbacks_to_db_select_when_repo_fails(monkeypatch):
     role = SimpleNamespace(role_id=uuid4(), name="guest", description="Guest role")
 
-    # RoleRepository.get_by_name -> exception => fallback to session.execute(...)
     role_repo = SimpleNamespace(get_by_name=AsyncMock(side_effect=RuntimeError("boom")))
     monkeypatch.setattr(dependencies, "RoleRepository", lambda _s: role_repo)
 
@@ -35,7 +35,8 @@ async def test_build_guest_principal_fallbacks_to_db_select_when_repo_fails(monk
 
     principal = await dependencies._build_guest_principal(session)
 
-    assert principal.user is None
+    assert principal.user_id is None
+    assert principal.username == "guest"
     assert principal.roles
     assert principal.roles[0].name == "guest"
 
@@ -45,8 +46,13 @@ async def test_build_guest_principal_returns_empty_roles_when_guest_role_missing
     role_repo = SimpleNamespace(get_by_name=AsyncMock(return_value=None))
     monkeypatch.setattr(dependencies, "RoleRepository", lambda _s: role_repo)
 
+    # important: function will fallback to DB select; stub it to return None
+    result = SimpleNamespace(scalar_one_or_none=lambda: None)
     session = AsyncMock()
+    session.execute = AsyncMock(return_value=result)
+
     principal = await dependencies._build_guest_principal(session)
 
-    assert principal.user is None
+    assert principal.user_id is None
+    assert principal.username == "guest"
     assert principal.roles == []
