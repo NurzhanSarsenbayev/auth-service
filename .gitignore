@@ -18,6 +18,9 @@ env.bak/
 venv.bak/
 
 ### --- Env files ---
+auth_service/.env.*
+auth_service/tests/.env.*
+
 !auth_service/.env.auth.sample
 !auth_service/tests/.env.test.auth.example
 

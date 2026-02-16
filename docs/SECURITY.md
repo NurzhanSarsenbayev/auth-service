@@ -28,7 +28,8 @@ and known limitations.
 
 ## Trust Model
 
-- X-Forwarded-For headers are trusted only when TRUST_PROXY_HEADERS=true.
+- X-Forwarded-For is trusted only when TRUST_PROXY_HEADERS=true and (if set)
+  the request comes from an allowlisted reverse proxy (TRUSTED_PROXY_IPS).
 - OAuth providers are treated as external identity authorities.
 - Redis is considered internal infrastructure.
 - PostgreSQL is not exposed to public clients.
@@ -65,8 +66,8 @@ Security boundaries are explicit and documented.
 - Refresh token is stored in an **HTTP-only cookie**.
 - Cookie security settings:
   - `HttpOnly=true`
-  - `Secure=true` outside testing mode
   - `SameSite=Strict`
+  - `Secure` is controlled by `COOKIE_SECURE` (should be `true` behind HTTPS in production).
 - Refresh flow rotates the refresh token (new refresh is stored in the HTTP-only cookie).
 - The API response body returns only a new access token (refresh is never returned in JSON).
 

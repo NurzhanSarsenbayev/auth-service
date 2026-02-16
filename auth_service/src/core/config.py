@@ -55,6 +55,17 @@ class Settings(BaseSettings):
     # If service is exposed directly, keep this False to avoid spoofing.
     trust_proxy_headers: bool = False
 
+    # Optional allowlist of reverse proxies that are allowed to provide X-Forwarded-For.
+    # Comma-separated, e.g. "10.0.0.10,10.0.0.11"
+    trusted_proxy_ips: str = ""
+
+    @property
+    def trusted_proxy_ip_set(self) -> set[str]:
+        raw = (self.trusted_proxy_ips or "").strip()
+        if not raw:
+            return set()
+        return {ip.strip() for ip in raw.split(",") if ip.strip()}
+
     # Connection timeouts (app-level, not only entrypoint)
     db_connect_timeout_sec: int = 10
     redis_connect_timeout_sec: int = 5
