@@ -18,15 +18,8 @@ env.bak/
 venv.bak/
 
 ### --- Env files ---
-.env
-.env.*
-!.env.auth.example
-!.env.auth.sample
-!.env.content.example
-!.env.admin.example
-!.env.test.auth.example
-!.env.test.content.example
-!.env.test.admin.example
+!auth_service/.env.auth.sample
+!auth_service/tests/.env.test.auth.example
 
 ### --- IDEs / Editors ---
 .idea/
@@ -73,17 +66,6 @@ alembic/versions/__pycache__/
 *.bak
 *.tmp
 
-### --- Project-specific ---
-/data
-/etl
-taskfull
-
-# --- Django ---
-*.sqlite3
-media/
-staticfiles/
-admin_panel/staticfiles/
-
 # secrets / keys
 *.key
 *.pem
@@ -96,5 +78,3 @@ auth_service/keys/*
 
 # Demo artifacts
 .demo/
-
-cyrrilic.txt
