@@ -1,8 +1,2 @@
 -r ../requirements.runtime.txt
 -r ../requirements.dev.txt
-
-pytest
-pytest-asyncio
-httpx
-aiosqlite
-pytest-cov

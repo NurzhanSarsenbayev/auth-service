@@ -21,9 +21,9 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 
 # ---- then test deps (fast) ----
 COPY requirements.dev.txt .
-COPY tests/requirements.test.auth.txt tests/requirements.test.auth.txt
+COPY tests/requirements.test.ci.txt tests/requirements.test.ci.txt
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --no-cache-dir -r tests/requirements.test.auth.txt
+    pip install --no-cache-dir -r tests/requirements.test.ci.txt
 
 # ---- copy application source ----
 COPY . .
