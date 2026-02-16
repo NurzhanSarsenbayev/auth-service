@@ -14,12 +14,13 @@ RUN apt-get update && apt-get install -y \
 ENV PIP_CACHE_DIR=/root/.cache/pip
 ENV PIP_PROGRESS_BAR=off
 
-# ---- production deps first (cache-friendly) ----
-COPY requirements.auth.txt .
+# ---- runtime deps first (cache-friendly) ----
+COPY requirements.runtime.txt .
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --no-cache-dir -r requirements.auth.txt
+    pip install --no-cache-dir -r requirements.runtime.txt
 
 # ---- then test deps (fast) ----
+COPY requirements.dev.txt .
 COPY tests/requirements.test.auth.txt tests/requirements.test.auth.txt
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --no-cache-dir -r tests/requirements.test.auth.txt

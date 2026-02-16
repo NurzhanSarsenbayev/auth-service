@@ -190,3 +190,23 @@ make down
 ```
 
 This stops all containers but preserves volumes unless explicitly removed.
+
+---
+## Local quality checks (host tooling)
+
+`make check` runs host tools (ruff, mypy, pre-commit). You must have a local virtualenv with dev dependencies installed.
+
+```bash
+python -m venv venv
+source venv/Scripts/activate  # Windows Git Bash
+pip install -r auth_service/requirements.dev.txt
+make check
+```
+
+Optional auto-fix:
+
+```bash
+make lint-fix
+```
+
+---

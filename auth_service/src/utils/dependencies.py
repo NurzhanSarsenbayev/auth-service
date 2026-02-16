@@ -48,6 +48,14 @@ async def _get_user_from_token(
     session: AsyncSession,
     redis: redis.Redis,
 ) -> User | None:
+    """
+    Best-effort access token resolver.
+
+    Contract:
+    - Returns ORM User on valid *access* token.
+    - Returns None for missing/invalid token, decode failures, non-access tokens, or unknown users.
+    - Does NOT raise HTTPException (public routes may treat invalid tokens as anonymous).
+    """
     if not token:
         return None
 
@@ -109,6 +117,14 @@ def get_user_role_service(
 # Auth dependencies
 # =============================
 async def _build_guest_principal(session: AsyncSession) -> CurrentUserResponse:
+    """
+    Build an anonymous ("guest") principal.
+
+    Contract:
+    - user_id is None
+    - username is "guest"
+    - roles include "guest" if present in DB; otherwise roles=[]
+    """
     try:
         role_repo = RoleRepository(session)
         guest_role = await role_repo.get_by_name("guest")
@@ -128,6 +144,13 @@ async def get_current_principal(
     redis_cli: redis.Redis = Depends(get_redis),
     token: str | None = Depends(oauth2_scheme_optional),
 ) -> CurrentUserResponse:
+    """
+    Resolve the current principal for routes that allow anonymous access.
+
+    Contract:
+    - Missing/invalid token => guest principal (never raises).
+    - Valid access token => authenticated principal + roles.
+    """
     if not token:
         return await _build_guest_principal(session)
 
@@ -161,6 +184,13 @@ async def get_current_user(
     redis: redis.Redis = Depends(get_redis),
     token: str = Depends(oauth2_scheme),
 ) -> User:
+    """
+    Strict authenticated-user dependency.
+
+    Contract:
+    - Requires a valid *access* token.
+    - Raises 401 on any auth failure (no guest fallback).
+    """
     try:
         payload = await decode_token(token, redis=redis)
     except Exception:
@@ -178,6 +208,15 @@ async def get_current_user(
 
 
 def get_current_user_with_roles(required_roles: list[str]):
+    """
+    Dependency factory for protected routes.
+
+    Contract:
+    - 401 if unauthenticated
+    - 403 if authenticated but missing required role(s)
+    - returns ORM User on success
+    """
+
     async def dependency(
         token: str = Depends(oauth2_scheme),
         session: AsyncSession = Depends(get_session),

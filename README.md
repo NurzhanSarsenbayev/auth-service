@@ -33,6 +33,20 @@ docs/ARCHITECTURE.md
 This demo proves the operational contract: fail-fast keys,
 reproducible infra, and enforceable authZ (RBAC) with revocable refresh tokens.
 
+### Demo prerequisites
+
+You must explicitly provide a superuser password (no hidden seed).
+
+**Git Bash:**
+```bash
+export SUPERUSER_PASSWORD='StrongPass123!'
+```
+PowerShell:
+
+```powershell
+$env:SUPERUSER_PASSWORD="StrongPass123!"
+```
+
 ```bash
 make demo
 ```
@@ -106,7 +120,9 @@ Operational notes: `docs/OPERATIONS.md`
 
 ## Configuration Model
 
-Environment variables are loaded from `.env.auth`.
+For local standalone runs, .env.auth is used as the canonical env file (created via make init-env).
+In Docker, the same file is consumed via docker-compose env_file,
+so local and CI use the same configuration surface.
 
 Important categories:
 

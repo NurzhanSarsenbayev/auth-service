@@ -15,7 +15,7 @@ TEST_COMPOSE := docker compose -f $(TEST_COMPOSE_FILE)
 
 .PHONY: help init-env up down ps logs logs-auth health ready migrate seed-roles create-superuser bootstrap
 .PHONY: test test-up test-build test-run test-cov test-logs test-down
-.PHONY: fmt fmt-check lint typecheck quality check demo demo-clean
+.PHONY: fmt fmt-check lint lint-fix typecheck precommit check fix demo demo-clean
 
 # --- Docker build flags ---
 # Usage:
@@ -142,7 +142,9 @@ test-logs:
 test-down:
 	$(TEST_COMPOSE) down -v --remove-orphans
 
-# --- Quality ---
+# --- Quality (host tooling) ---
+# Requires local venv with dev dependencies installed (ruff, mypy, pre-commit).
+# See docs/OPERATIONS.md.
 
 fmt:
 	ruff format .
@@ -151,16 +153,22 @@ fmt-check:
 	ruff format --check .
 
 lint:
-	ruff check $(RUFF_PATHS)
+	ruff check auth_service/src auth_service/*.py
 
 lint-fix:
-	ruff check $(RUFF_PATHS) --fix
+	ruff check --fix auth_service/src auth_service/*.py
 
 typecheck:
-	MYPYPATH=auth_service/src mypy $(MYPY_PATHS)
+	MYPYPATH=auth_service/src mypy auth_service/src/core auth_service/src/db auth_service/src/utils/jwt.py auth_service/src/utils/security.py
+
+precommit:
+	pre-commit run -a
+
+check: fmt-check lint typecheck
+
+fix: fmt lint-fix precommit
 
 quality: fmt-check lint typecheck
-check: quality
 
 demo:
 	bash scripts/demo.sh

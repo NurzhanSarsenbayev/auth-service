@@ -99,7 +99,8 @@ class Settings(BaseSettings):
         return self
 
     model_config = SettingsConfigDict(
-        env_file="auth_service/.env.auth",  # Local env file for standalone runs
+        # Local standalone runs: allow both repo-root and service-root working directories.
+        env_file=["auth_service/.env.auth", ".env.auth"],
         env_prefix="",
         case_sensitive=False,
     )

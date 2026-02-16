@@ -1,4 +1,5 @@
--r ../requirements.auth.txt
+-r ../requirements.runtime.txt
+-r ../requirements.dev.txt
 
 pytest
 pytest-asyncio

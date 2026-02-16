@@ -12,8 +12,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-COPY requirements.auth.txt .
-RUN pip install --no-cache-dir -r requirements.auth.txt
+COPY requirements.runtime.txt .
+RUN pip install --no-cache-dir -r requirements.runtime.txt
 
 COPY . .
 RUN chmod +x /app/entrypoint.auth.sh
