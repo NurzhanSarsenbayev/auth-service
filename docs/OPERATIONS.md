@@ -71,8 +71,8 @@ Check readiness:
 make ready
 ```
 
-* **healthz** → process is running
-* **readyz** → Postgres and Redis are reachable
+* **healthz** -> process is running
+* **readyz** -> Postgres and Redis are reachable
 * `readyz` returns **503** if dependencies are unavailable
 
 You can also call:

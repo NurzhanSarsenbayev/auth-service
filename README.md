@@ -169,10 +169,10 @@ CI reflects the actual project state. No hidden steps or undocumented behavior.
 ---
 ## Design Decisions
 
-- **RS256 instead of HS256** — enables public key distribution via JWKS and avoids symmetric key sharing.
-- **Redis-backed revocation** — decouples token invalidation from primary storage.
-- **Fail-fast startup model** — prevents undefined runtime states.
-- **Docker-first development model** — ensures CI/local parity.
+- **RS256 instead of HS256** -- enables public key distribution via JWKS and avoids symmetric key sharing.
+- **Redis-backed revocation** -- decouples token invalidation from primary storage.
+- **Fail-fast startup model** -- prevents undefined runtime states.
+- **Docker-first development model** -- ensures CI/local parity.
 
 ## Non-Goals
 

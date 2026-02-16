@@ -8,7 +8,6 @@ omit =
     src/core/telemetry.py
     src/middleware/rate_limit.py
     src/helpers/role_helpers.py
-    src/utils/blacklist.py
     src/core/startup_check.py
     src/main.py
     src/core/oauth/providers/google.py
